@@ -40,6 +40,8 @@
 
 
 .template-name-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;margin:0 0 8px}.template-name-row label{font-size:10px;color:var(--muted);font-weight:800}.template-name-row input{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d6e1ed;border-radius:9px;background:#fff;color:var(--text);font-size:12px}.quick-template-bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:0 0 8px;padding:7px 9px;border:1px solid #e1e9f2;background:#f8fbff;border-radius:10px}.quick-template-bar>span{font-size:10px;color:var(--muted);font-weight:800;margin-right:2px}.value-plate .well.value-focus{box-shadow:0 0 0 4px rgba(22,119,245,.2),0 0 0 2px #1677f5 inset;transform:scale(1.04)}
+
+.voice-picker-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}.voice-picker-row select{min-width:0}.voice-card #voiceHint{display:block;margin-top:4px;color:var(--muted);font-size:9px}
 </style>
   <title>LabGuide v1.3</title>
 </head>
@@ -248,6 +250,7 @@
             <div class="section-toolbar"><div><h2>语音导航</h2><p>点击“下一个”后播报下一枪；体积变化时重点提醒调枪。</p></div><button id="testVoiceBtn" class="ghost-btn small">🔊 测试语音</button></div>
             <div class="toggle-row"><div><b>启用语音</b><span>使用 iPad 系统语音合成</span></div><input id="voiceEnabled" type="checkbox" checked /></div>
             <label class="form-line">播报模式<select id="voiceMode"><option value="full">完整：试剂 + 孔位 + 体积</option><option value="standard" selected>标准：孔位 + 体积</option><option value="volume">只播体积：60微升</option><option value="compact">精简：体积相同只播孔位</option></select><small>“只播体积”模式下，不播孔位、试剂切换或调枪提示，只读当前体积。</small></label>
+            <label class="form-line">发音人<div class="voice-picker-row"><select id="voiceSelect"><option value="">系统默认中文语音</option></select><button id="refreshVoicesBtn" class="ghost-btn small" type="button">刷新</button></div><small id="voiceHint">仅显示这台 iPad / Safari 当前可用的中文发音人。</small></label>
             <div class="toggle-row"><div><b>体积变化重点提醒</b><span>例如“注意，调整移液器至40微升，A4”</span></div><input id="emphasizeVolume" type="checkbox" checked /></div>
             <div class="toggle-row"><div><b>试剂切换提醒</b><span>进入下一步骤时提醒更换试剂</span></div><input id="reagentSwitchVoice" type="checkbox" checked /></div>
             <label class="form-line">语速<input id="voiceRate" type="range" min="0.7" max="1.4" step="0.1" value="1" /></label>
@@ -339,7 +342,7 @@
     return task;
   }
 
-  const state={plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'dark',showCoordinates:true,voice:{enabled:true,mode:'standard',emphasizeVolume:true,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'};
+  const state={plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'dark',showCoordinates:true,voice:{enabled:true,mode:'standard',voiceURI:'',emphasizeVolume:true,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'};
   const run={active:false,actions:[],index:0,startedAt:null,timer:null,countdownTimer:null,nextAt:null,paused:false,calibrationMode:false,log:[],historyId:null};
   let calibration={};
   let taskTemplates=[];
@@ -430,7 +433,7 @@
     loadReusableData();
     try{
       const raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-      if(raw)Object.assign(state,raw,{colors:{...defaultColors,...(raw.colors||{})},voice:{enabled:true,mode:'standard',emphasizeVolume:true,reagentSwitch:true,rate:1,...(raw.voice||{})},selectionHistory:[],rectAnchor:null});
+      if(raw)Object.assign(state,raw,{colors:{...defaultColors,...(raw.colors||{})},voice:{enabled:true,mode:'standard',voiceURI:'',emphasizeVolume:true,reagentSwitch:true,rate:1,...(raw.voice||{})},selectionHistory:[],rectAnchor:null});
       const c=JSON.parse(localStorage.getItem(CAL_KEY)||'null');
       if(c)calibration=c; else {const old=JSON.parse(localStorage.getItem('labguide-v1-calibration')||'null');if(old){Object.entries(old).forEach(([p,v])=>calibration[`${p}-landscape`]=v)}}
     }catch(e){console.warn(e)}
@@ -450,7 +453,7 @@
     ensureDefaults();$$('.plate-card').forEach(c=>c.classList.toggle('selected',Number(c.dataset.plate)===state.plate));
     $$('input[name="opMode"]').forEach(i=>i.checked=i.value===state.opMode);$$('.radio-line').forEach(l=>{const i=$('input',l);l.classList.toggle('selected',i?.checked)});
     $('#intervalInput').value=state.interval;$('#intervalSetting').classList.toggle('disabled-block',state.opMode!=='auto');
-    $('#voiceEnabled').checked=state.voice.enabled;$('#voiceMode').value=state.voice.mode;$('#emphasizeVolume').checked=state.voice.emphasizeVolume;$('#reagentSwitchVoice').checked=state.voice.reagentSwitch;$('#voiceRate').value=state.voice.rate;$('#quickVerifyToggle').checked=state.quickVerify;if($('#plateBackgroundSelect'))$('#plateBackgroundSelect').value=state.plateBackground||'dark';if($('#showCoordinateToggle'))$('#showCoordinateToggle').checked=state.showCoordinates!==false;
+    $('#voiceEnabled').checked=state.voice.enabled;$('#voiceMode').value=state.voice.mode;if($('#voiceSelect'))$('#voiceSelect').value=state.voice.voiceURI||'';$('#emphasizeVolume').checked=state.voice.emphasizeVolume;$('#reagentSwitchVoice').checked=state.voice.reagentSwitch;$('#voiceRate').value=state.voice.rate;$('#quickVerifyToggle').checked=state.quickVerify;if($('#plateBackgroundSelect'))$('#plateBackgroundSelect').value=state.plateBackground||'dark';if($('#showCoordinateToggle'))$('#showCoordinateToggle').checked=state.showCoordinates!==false;
     setPanel(state.activePanel||'plate');updateResumeBanner();
   }
 
@@ -618,6 +621,27 @@
   function stopAuto(clear=true){clearTimeout(run.timer);clearInterval(run.countdownTimer);run.timer=null;run.countdownTimer=null;if(clear)$('#countdownLabel').textContent=''}
   function togglePause(){if(state.opMode!=='auto')return;run.paused=!run.paused;stopAuto();$('#pauseAutoBtn').textContent=run.paused?'▶ 继续':'Ⅱ 暂停';if(!run.paused)scheduleAutoTick()}
 
+  let availableVoices=[];
+  function voiceLabel(v){
+    const locale=(v.lang||'').replace('_','-');
+    const local=v.localService===false?' · 在线':'';
+    return `${v.name || '中文语音'} · ${locale || 'zh'}${local}`
+  }
+  function loadVoices(){
+    if(!('speechSynthesis'in window))return;
+    const all=window.speechSynthesis.getVoices()||[];
+    const zh=all.filter(v=>/^zh(?:-|_)/i.test(v.lang||'')||/Chinese|Mandarin|中文|普通话|國語|国语/i.test(v.name||''));
+    availableVoices=zh.length?zh:all;
+    const select=$('#voiceSelect');if(!select)return;
+    const selected=state.voice.voiceURI||'';select.innerHTML='<option value="">系统默认中文语音</option>';
+    availableVoices.forEach(v=>{const o=document.createElement('option');o.value=v.voiceURI||v.name;o.textContent=voiceLabel(v);select.append(o)});
+    if([...select.options].some(o=>o.value===selected))select.value=selected;else{select.value='';if(selected){state.voice.voiceURI='';saveState()}}
+    const hint=$('#voiceHint');if(hint)hint.textContent=zh.length?`找到 ${zh.length} 个中文发音人，可以逐个试听。`:(all.length?'没有识别到中文语音，已显示系统可用语音。':'正在读取系统语音，可点“刷新”再试。')
+  }
+  function selectedVoice(){
+    const id=state.voice.voiceURI||'';if(!id)return null;
+    return availableVoices.find(v=>(v.voiceURI||v.name)===id)||null
+  }
   function speechText(prev,a){if(!a)return'';const val=a.value!==''?`${formatNum(a.value)}${speakUnit(a.unit)}`:'';if(state.voice.mode==='volume')return val;const reagentChanged=prev&&(prev.stepId!==a.stepId||prev.taskId!==a.taskId);const volumeChanged=prev&&String(prev.value)!==String(a.value);const tip=(a.tipPolicy==='well'||(a.tipPolicy==='step'&&(!prev||reagentChanged)))?'请更换枪头。':'';const warn=pipetteWarning(a);if(warn)return `${tip}警告，${warn}。${a.well}`;const pip=val?recommendedPipette(Number(a.value),a.pipette):'';if(!prev&&state.voice.reagentSwitch)return `${tip}${a.stepName}。${pip?`${pip}，`:''}${a.well}${val?`，${val}`:''}`;if(reagentChanged&&state.voice.reagentSwitch)return `${tip}请切换至${a.stepName}。${pip?`${pip}，`:''}${a.well}${val?`，${val}`:''}`;if(volumeChanged&&state.voice.emphasizeVolume&&val)return `${tip}注意，${pip?`使用${pip}，`:''}调整移液器至${val}。${a.well}`;if(state.voice.mode==='full')return `${tip}${a.stepName}，${a.well}${val?`，${val}`:''}`;if(state.voice.mode==='compact'&&prev&&String(prev.value)===String(a.value))return `${tip}${a.well}`;return `${tip}${a.well}${val?`，${val}`:''}`}
   
   const PIPETTES={P10:[0.5,10],P20:[2,20],P200:[20,200],P1000:[100,1000]};
@@ -625,7 +649,7 @@
   function pipetteWarning(a){if(a.value===''||a.unit!=='μL')return'';const v=Number(a.value);if(!Number.isFinite(v)||v<=0)return'';if(a.pipette&&a.pipette!=='auto'){const r=PIPETTES[a.pipette];if(r&&(v<r[0]||v>r[1]))return `${formatNum(v)}微升超出${a.pipette}建议范围 ${r[0]}到${r[1]}微升`}else if(v<0.5||v>1000)return `${formatNum(v)}微升超出当前预设移液器范围`;return''}
 
   function speakUnit(u){return u==='μL'?'微升':u==='mL'?'毫升':u==='ng/mL'?'纳克每毫升':u==='μg/mL'?'微克每毫升':u==='mg/mL'?'毫克每毫升':u||''}
-  function speak(text){if(!state.voice.enabled||!('speechSynthesis'in window)||!text)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='zh-CN';u.rate=Number(state.voice.rate)||1;window.speechSynthesis.speak(u)}
+  function speak(text){if(!state.voice.enabled||!('speechSynthesis'in window)||!text)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text),v=selectedVoice();if(v){u.voice=v;u.lang=v.lang||'zh-CN'}else u.lang='zh-CN';u.rate=Number(state.voice.rate)||1;window.speechSynthesis.speak(u)}
   function announceCurrent(prev,a){speak(speechText(prev,a))}
 
   function completeRun(){stopAuto();run.index=run.actions.length;syncHistory('completed');run.active=false;$('#runPanel').classList.add('hidden');$('#runSidebar').classList.add('hidden');$('#completePanel').classList.remove('hidden');const sec=Math.max(0,Math.floor((Date.now()-run.startedAt)/1000));$('#completePlate').textContent=`${state.plate} 孔板`;$('#completeCount').textContent=`${run.actions.length} 次`;$('#completeStart').textContent=new Date(run.startedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});$('#completeDuration').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;clearRunSnapshot();speak('本次加样完成')}
@@ -638,7 +662,7 @@
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`LabGuide_${new Date(run.startedAt).toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  function resetAll(){if(!confirm('确定重置任务、数值和设置？已保存的校准将保留。'))return;const keepCal=calibration;localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(RUN_KEY);Object.assign(state,{plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'dark',showCoordinates:true,voice:{enabled:true,mode:'standard',emphasizeVolume:true,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'});calibration=keepCal;ensureDefaults();saveState();syncUI();renderHistoryViews();toast('已重置当前设置，模板、记录和校准均保留')}
+  function resetAll(){if(!confirm('确定重置任务、数值和设置？已保存的校准将保留。'))return;const keepCal=calibration;localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(RUN_KEY);Object.assign(state,{plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'dark',showCoordinates:true,voice:{enabled:true,mode:'standard',voiceURI:'',emphasizeVolume:true,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'});calibration=keepCal;ensureDefaults();saveState();syncUI();renderHistoryViews();toast('已重置当前设置，模板、记录和校准均保留')}
 
   function bindUI(){
     $$('.nav-item').forEach(b=>b.onclick=()=>setPanel(b.dataset.panel));$$('.plate-card').forEach(c=>c.onclick=()=>{state.plate=Number(c.dataset.plate);sanitizeTasks();state.rectAnchor=null;saveState();syncUI()});
@@ -649,7 +673,7 @@
     const taskFields=[['taskNameInput','name'],['taskTypeSelect','type'],['layoutDirection','layoutDirection'],['executionDirection','executionDirection'],['replicateDirection','replicateDirection']];taskFields.forEach(([id,key])=>$('#'+id).addEventListener('change',e=>{activeTask()[key]=e.target.value;saveState();renderTaskEditor();renderSelection();renderValues()}));$('#replicateCount').onchange=e=>{activeTask().replicateCount=Math.max(1,Math.min(12,Number(e.target.value)||1));saveState();renderTaskPreview()};
     $('#addStepBtn').onclick=()=>{const s=makeStep(`加样任务 ${activeTask().steps.length+1}`);activeTask().steps.push(s);state.activeStepId=s.id;saveState();renderValues()};$('#applyBcaTemplateBtn').onclick=applyBuiltInBca;$('#saveCurrentTemplateFromValuesBtn').onclick=saveTemplateFromValues;$('#openMyTemplatesFromValuesBtn').onclick=()=>{$('#valueTemplateList').classList.toggle('hidden');renderValueTemplateList()};$('#stepMoveUpBtn').onclick=()=>moveStep(-1);$('#stepMoveDownBtn').onclick=()=>moveStep(1);$('#stepNameInput').onchange=e=>{activeStep().name=e.target.value||'未命名步骤';saveState();renderValues()};$('#stepUnitSelect').onchange=e=>{activeStep().unit=e.target.value;saveState();renderValues()};$('#stepPipetteSelect').onchange=e=>{activeStep().pipette=e.target.value;saveState();renderValues()};$('#tipPolicySelect').onchange=e=>{activeStep().tipPolicy=e.target.value;saveState();renderValues()};$('#fillValueBtn').onclick=fillAll;$('#applySequenceBtn').onclick=applySequence;$('#complementBtn').onclick=complement;const saveSingleValue=()=>{if(!selectedValueWell){toast('先点一个孔');return}const v=Number($('#singleValueInput').value);if(!Number.isFinite(v)){toast('请输入数值');return}activeStep().values[selectedValueWell]=v;saveState();renderValues();toast(`${selectedValueWell} 已保存`)};$('#singleValueSaveBtn').onclick=saveSingleValue;$('#singleValueInput').onkeydown=e=>{if(e.key==='Enter')saveSingleValue()};$('#deleteStepBtn').onclick=()=>{const t=activeTask();if(t.steps.length<=1){toast('至少保留一个步骤');return}const s=activeStep();t.steps=t.steps.filter(x=>x.id!==s.id);state.activeStepId=t.steps[0].id;saveState();renderValues()};
     $$('input[name="opMode"]').forEach(i=>i.onchange=()=>{state.opMode=i.value;saveState();syncUI()});$('#intervalMinus').onclick=()=>{state.interval=Math.max(1,+(state.interval-.5).toFixed(1));saveState();syncUI()};$('#intervalPlus').onclick=()=>{state.interval=Math.min(60,+(state.interval+.5).toFixed(1));saveState();syncUI()};$('#intervalInput').onchange=e=>{state.interval=Math.max(1,Math.min(60,Number(e.target.value)||5));saveState();syncUI()};
-    $('#voiceEnabled').onchange=e=>{state.voice.enabled=e.target.checked;saveState()};$('#voiceMode').onchange=e=>{state.voice.mode=e.target.value;saveState()};$('#emphasizeVolume').onchange=e=>{state.voice.emphasizeVolume=e.target.checked;saveState()};$('#reagentSwitchVoice').onchange=e=>{state.voice.reagentSwitch=e.target.checked;saveState()};$('#voiceRate').oninput=e=>{state.voice.rate=Number(e.target.value);saveState()};$('#testVoiceBtn').onclick=()=>speak(state.voice.mode==='volume'?'六十微升':'LabGuide 语音提示已开启。A三，六十微升。');
+    $('#voiceEnabled').onchange=e=>{state.voice.enabled=e.target.checked;saveState()};$('#voiceMode').onchange=e=>{state.voice.mode=e.target.value;saveState()};$('#voiceSelect').onchange=e=>{state.voice.voiceURI=e.target.value;saveState();speak(state.voice.mode==='volume'?'六十微升':'A三，六十微升')};$('#refreshVoicesBtn').onclick=()=>{loadVoices();toast(availableVoices.length?`已刷新 ${availableVoices.length} 个可用语音`:'暂未读取到系统语音')};$('#emphasizeVolume').onchange=e=>{state.voice.emphasizeVolume=e.target.checked;saveState()};$('#reagentSwitchVoice').onchange=e=>{state.voice.reagentSwitch=e.target.checked;saveState()};$('#voiceRate').oninput=e=>{state.voice.rate=Number(e.target.value);saveState()};$('#testVoiceBtn').onclick=()=>speak(state.voice.mode==='volume'?'六十微升':'LabGuide 语音提示已开启。A三，六十微升。');
     $('#plateBackgroundSelect').onchange=e=>{state.plateBackground=e.target.value;saveState();if(run.active)renderRunStage()};$('#openHistoryBtn').onclick=()=>setPanel('history');$('#clearFinishedHistoryBtn').onclick=()=>{if(!confirm('清理所有已完成的实验记录？未完成记录会保留。'))return;experimentHistory=experimentHistory.filter(h=>h.status!=='completed');saveHistory();renderHistoryViews()};$('#showCoordinateToggle').onchange=e=>{state.showCoordinates=e.target.checked;saveState();if(run.active)renderRunStage()};$('#quickVerifyToggle').onchange=e=>{state.quickVerify=e.target.checked;saveState()};$('#calibrationProfileName').onchange=e=>{const x=getCalibration();x.name=e.target.value.trim();saveState();renderCalibrationManager()};$('#copyCalibrationCodeBtn').onclick=copyCalibrationCode;$('#importCalibrationCodeBtn').onclick=importCalibrationCode;$('#forceRecalibrateBtn').onclick=()=>{state.forceRecalibrate[String(state.plate)]=true;const c=getCalibration();c.saved=false;saveState();renderCalibrationManager();toast('已标记：下次开始时重新校准')};$('#saveRunCalibrationBtn').onclick=saveRunCalibration;$('#calUpBtn').onclick=()=>nudgeCalibration(0,-1);$('#calDownBtn').onclick=()=>nudgeCalibration(0,1);$('#calLeftBtn').onclick=()=>nudgeCalibration(-1,0);$('#calRightBtn').onclick=()=>nudgeCalibration(1,0);$('#calPrevBtn').onclick=()=>{calibrationPointIndex=Math.max(0,calibrationPointIndex-1);updateCalibrationControls();addCalibrationHandles()};$('#calNextBtn').onclick=()=>{calibrationPointIndex=Math.min(3,calibrationPointIndex+1);updateCalibrationControls();addCalibrationHandles()};$('.cal-step').forEach(b=>b.onclick=()=>{calibrationStepPx=Number(b.dataset.calStep)||1;updateCalibrationControls()});
     $('#resumeBtn').onclick=()=>{const s=getRunSnapshot();if(s)startRun(s)};$('#discardResumeBtn').onclick=()=>{$('#resumeBanner').classList.add('hidden');toast('可以稍后从“实验记录”继续')};$('#exportLogBtn').onclick=exportLogCSV;$('#newRunBtn').onclick=()=>{run.active=false;$('#completePanel').classList.add('hidden');$('#setupSidebar').classList.remove('hidden');$('.topbar').classList.remove('hidden');setPanel('selection')};$('#finishBtn').onclick=()=>{run.active=false;$('#completePanel').classList.add('hidden');$('#setupSidebar').classList.remove('hidden');$('.topbar').classList.remove('hidden');setPanel('plate');toast('实验已完成')};
     $('#installBtn').onclick=()=>$('#installModal').classList.remove('hidden');$('#closeInstallModal').onclick=()=>$('#installModal').classList.add('hidden');window.addEventListener('resize',()=>{if(run.active){renderRun();if(run.calibrationMode){addCalibrationHandles();updateCalibrationControls()}}});
@@ -657,7 +681,8 @@
 
   function escapeHtml(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 
-  loadState();bindUI();syncUI();renderHistoryViews();
+  loadState();bindUI();syncUI();renderHistoryViews();loadVoices();
+  if('speechSynthesis'in window){window.speechSynthesis.onvoiceschanged=loadVoices;setTimeout(loadVoices,300);setTimeout(loadVoices,1200)}
   if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 
