@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#eef5ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LabGuide">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>LabGuide v1.0</title>
+<style>
+:root{--bg:#eef5ff;--card:#fff;--line:#d7e2f0;--text:#19324d;--muted:#6f8195;--blue:#2f7df6;--green:#39c979;--red:#ef6461;--shadow:0 8px 24px rgba(48,79,114,.12)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+button,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app{height:100vh;display:grid;grid-template-columns:190px 1fr}
+.sidebar{background:#fff;border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 4px 12px}
+.logo{width:42px;height:42px;border-radius:12px;background:#e8f2ff;display:grid;place-items:center;font-size:24px}
+.brand b{font-size:20px}.brand small{display:block;color:var(--muted);margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:8px}
+.nav button,.sideAction{border:0;background:#f4f7fb;border-radius:14px;padding:13px 12px;text-align:left;color:var(--text);font-weight:650}
+.nav button.active{background:#e8f2ff;color:#1366d6}
+.spacer{flex:1}
+.sideAction{display:flex;justify-content:center;gap:8px;font-size:16px}
+.start{background:var(--green);color:white}.reset{background:#f1f3f6}
+.main{padding:18px 22px 22px;overflow:auto}
+.top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.top h1{margin:0;font-size:25px}.top p{margin:5px 0 0;color:var(--muted)}
+.pill{padding:8px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:13px}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.plateCard{border:2px solid transparent;background:white;border-radius:18px;padding:20px;min-height:180px;box-shadow:var(--shadow)}
+.plateCard.active{border-color:var(--blue);background:#f7fbff}
+.plateCard strong{display:block;font-size:22px;margin:10px 0 2px}.plateCard span{color:var(--muted)}
+.mini{height:92px;border-radius:14px;border:1px solid var(--line);background-image:radial-gradient(circle,#a9bdd5 2.4px,transparent 2.7px);background-size:20px 20px;background-position:10px 10px}
+.selLayout{display:grid;grid-template-columns:1fr 260px;gap:16px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.toolbar h2{margin:0 0 4px}.toolbar p{margin:0;color:var(--muted)}
+.smallBtns{display:flex;gap:8px}.ghost{border:1px solid var(--line);background:white;border-radius:10px;padding:8px 12px}
+.plateWrap{overflow:auto;padding:8px 4px}
+.plate{display:grid;gap:6px;align-items:center;justify-content:center;user-select:none;touch-action:none;min-width:max-content}
+.well{width:34px;height:34px;border-radius:50%;border:2px solid #cbd8e7;background:#f8fbff;display:grid;place-items:center;font-size:9px;color:#7c90a7}
+.well.selected{background:#5b98f7;border-color:#2f7df6;color:#fff}
+.colLab,.rowLab{font-size:12px;color:#62778c;text-align:center;font-weight:700}
+.metric{font-size:29px;font-weight:800;margin:10px 0}.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.optionGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.option{position:relative;border:2px solid var(--line);border-radius:15px;padding:15px;background:#fff;min-height:115px}
+.option:has(input:checked){border-color:var(--blue);background:#f4f9ff}.option input{position:absolute;right:12px;top:12px}
+.option b{display:block;font-size:18px;margin-bottom:5px}.option span{font-size:13px;color:var(--muted)}
+.inline{display:flex;align-items:center;gap:10px;margin-top:14px}.inline input[type=number]{width:76px;padding:8px;border:1px solid var(--line);border-radius:10px}
+.step{width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.radioStack{display:flex;flex-direction:column;gap:10px}.radioLine{display:flex;gap:10px;border:1px solid var(--line);border-radius:13px;padding:13px}
+.colors{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.colorRow{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:13px;padding:14px}.colorRow input{width:44px;height:34px;border:0;background:none}
+.calStage{height:360px;position:relative;border:1px dashed #9db2ca;border-radius:18px;background:linear-gradient(#fafdff,#edf5ff)}
+.corner{position:absolute;width:42px;height:42px;border-radius:50%;background:#fff;border:3px solid var(--blue);display:grid;place-items:center;font-size:11px;font-weight:800}
+.c1{left:8%;top:10%}.c2{right:8%;top:10%}.c3{left:8%;bottom:10%}.c4{right:8%;bottom:10%}
+.run{height:100vh;display:grid;grid-template-columns:190px 1fr;background:var(--bg)}
+.runSide{background:#fff;border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column}
+.runBtns{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.runBtn{border:0;border-radius:16px;padding:24px 10px;font-size:18px;font-weight:800}.rBack{background:#feeceb;color:#bd3430}.rUndo{background:#eaf2fb;color:#37556f}.rNext{background:#e7f2ff;color:#1668d9}
+.runMain{padding:18px 22px;overflow:auto}.runHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.current{font-size:34px;font-weight:900}.progress{color:var(--muted)}
+.runPlate{position:relative;min-height:540px;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:20px;display:flex;align-items:center;justify-content:center}
+.runGrid{display:grid;gap:7px;align-items:center;justify-content:center}
+.runWell{width:40px;height:40px;border-radius:50%;border:2px solid #cbd8e7}
+.runWell.current{box-shadow:0 0 0 7px rgba(57,201,121,.2);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(.9);box-shadow:0 0 0 11px rgba(57,201,121,.12)}}
+.complete{position:fixed;inset:0;background:rgba(238,245,255,.96);display:grid;place-items:center}.complete .card{text-align:center;min-width:330px}.check{font-size:64px;color:var(--green)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#203349;color:white;padding:10px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}
+@media(max-width:900px){.app,.run{grid-template-columns:155px 1fr}.sidebar,.runSide{padding:10px}.main,.runMain{padding:12px}.selLayout{grid-template-columns:1fr}.optionGrid{grid-template-columns:repeat(2,1fr)}}
+@media(orientation:portrait){body:before{content:"建议横屏使用 LabGuide";position:fixed;z-index:99;left:50%;top:8px;transform:translateX(-50%);background:#fff7d9;padding:8px 12px;border-radius:999px;font-size:12px}}
+</style>
+</head>
+<body>
+<div id="setup" class="app">
+<aside class="sidebar">
+<div class="brand"><div class="logo">⚗</div><div><b>LabGuide</b><small>微孔板加样引导器</small></div></div>
+<div class="nav">
+<button class="active" data-p="plate">▦　板型</button>
+<button data-p="selection">◫　加样区域</button>
+<button data-p="movement">↔　移动方式</button>
+<button data-p="operation">▶　操作模式</button>
+<button data-p="colors">●　颜色设置</button>
+<button data-p="calibration">⌖　板位校准</button>
+</div>
+<div class="spacer"></div>
+<button id="reset" class="sideAction reset">↻ 重置</button>
+<button id="start" class="sideAction start">▶ 开始</button>
+</aside>
+<main class="main">
+<div class="top"><div><h1 id="title">选择微孔板类型</h1><p id="desc">请选择你要使用的微孔板类型</p></div><span id="save" class="pill">已自动保存</span></div>
+
+<section id="p-plate" class="panel active">
+<div class="grid2">
+<button class="plateCard active" data-plate="96"><div class="mini"></div><strong>96 孔板</strong><span>8 × 12 · 常用</span></button>
+<button class="plateCard" data-plate="384"><div class="mini" style="background-size:12px 12px;background-position:6px 6px"></div><strong>384 孔板</strong><span>16 × 24 · 高通量</span></button>
+</div>
+</section>
+
+<section id="p-selection" class="panel">
+<div class="selLayout">
+<div class="card">
+<div class="toolbar"><div><h2>选择加样区域</h2><p>单击切换孔位；拖动可矩形选择。</p></div><div class="smallBtns"><button id="all" class="ghost">全选</button><button id="clear" class="ghost">清空</button></div></div>
+<div class="plateWrap"><div id="selPlate" class="plate"></div></div>
+</div>
+<div class="card"><h3>已选择区域</h3><div id="range" class="metric">—</div><div class="muted"><span id="count">0</span> 孔</div><hr><div class="stack"><button id="rowA" class="ghost">首行</button><button id="col1" class="ghost">首列</button><button id="invert" class="ghost">反选</button></div></div>
+</div>
+</section>
+
+<section id="p-movement" class="panel">
+<div class="card"><h2>加样单位</h2><p class="muted">决定每一次高亮多少个孔。</p>
+<div class="optionGrid">
+<label class="option"><input type="radio" name="unit" value="single" checked><b>单孔</b><span>每次 1 个孔</span></label>
+<label class="option"><input type="radio" name="unit" value="n"><b>N 孔</b><span>适合多道移液枪</span></label>
+<label class="option"><input type="radio" name="unit" value="row"><b>整行</b><span>一次高亮整行已选孔</span></label>
+<label class="option"><input type="radio" name="unit" value="column"><b>整列</b><span>一次高亮整列已选孔</span></label>
+</div>
+<div class="inline">每次孔数 <button id="nminus" class="step">−</button><input id="ncount" type="number" value="8" min="2" max="24"><button id="nplus" class="step">+</button></div>
+</div>
+<div class="card" style="margin-top:14px"><h2>遍历方向</h2>
+<div class="grid2">
+<label class="option"><input type="radio" name="trav" value="horizontal" checked><b>横向</b><span>A1 → A2 → …，再进入下一行</span></label>
+<label class="option"><input type="radio" name="trav" value="vertical"><b>纵向</b><span>A1 → B1 → …，再进入下一列</span></label>
+</div><p class="muted" style="margin-bottom:0">路径预览：<span id="preview">—</span></p>
+</div>
+</section>
+
+<section id="p-operation" class="panel">
+<div class="card"><h2>推进方式</h2>
+<div class="radioStack">
+<label class="radioLine"><input type="radio" name="mode" value="manual" checked><div><b>手动移动</b><div class="muted">每次点击“下一个”推进</div></div></label>
+<label class="radioLine"><input type="radio" name="mode" value="auto"><div><b>自动移动</b><div class="muted">按设定时间自动推进</div></div></label>
+</div>
+<div class="inline">时间间隔 <button id="iminus" class="step">−</button><input id="interval" type="number" value="5" min="1" max="60" step=".5"> s <button id="iplus" class="step">+</button></div>
+</div>
+</section>
+
+<section id="p-colors" class="panel">
+<div class="card"><h2>孔位状态颜色</h2><div class="colors">
+<div class="colorRow"><span>未选择</span><input id="c-unselected" type="color" value="#f8fbff"></div>
+<div class="colorRow"><span>待加样</span><input id="c-pending" type="color" value="#5792f3"></div>
+<div class="colorRow"><span>当前</span><input id="c-current" type="color" value="#39c979"></div>
+<div class="colorRow"><span>已完成</span><input id="c-completed" type="color" value="#eef2f6"></div>
+</div></div>
+</section>
+
+<section id="p-calibration" class="panel">
+<div class="card"><h2>板位校准</h2><p class="muted">实体孔板放到 iPad 上后，用四角点检查 A1 / A末 / 末行1 / 末行末 是否落在孔中心。v1.0 先保存板型与屏幕状态，后续继续做精细拖拽校准。</p>
+<div class="calStage"><div class="corner c1">A1</div><div class="corner c2">A末</div><div class="corner c3">末行1</div><div class="corner c4">末末</div></div>
+</div>
+</section>
+</main>
+</div>
+
+<div id="run" class="run hidden">
+<aside class="runSide"><div class="brand"><div class="logo">⚗</div><div><b>LabGuide</b><small>运行中</small></div></div><div class="runBtns">
+<button id="return" class="runBtn rBack">← 返回</button>
+<button id="undo" class="runBtn rUndo">← 回退</button>
+<button id="next" class="runBtn rNext">→ 下一个</button>
+<button id="pause" class="runBtn rUndo hidden">Ⅱ 暂停</button>
+</div></aside>
+<main class="runMain">
+<div class="runHead"><div><div class="muted">当前加样位置</div><div id="current" class="current">—</div></div><div class="progress"><span id="prog">0 / 0</span>　<span id="countdown"></span></div></div>
+<div class="runPlate"><div id="runGrid" class="runGrid"></div></div>
+</main>
+</div>
+
+<div id="complete" class="complete hidden"><div class="card"><div class="check">✓</div><h2>加样完成</h2><p id="doneText" class="muted"></p><button id="done" class="sideAction start" style="width:100%">完成</button></div></div>
+<div id="toast" class="toast">已保存</div>
+
+<script>
+(function(){
+var SKEY='labguide-v1-state',RKEY='labguide-v1-run';
+var state={plate:96,selected:[],unit:'single',n:8,trav:'horizontal',mode:'manual',interval:5,colors:{unselected:'#f8fbff',pending:'#5792f3',current:'#39c979',completed:'#eef2f6'}};
+var run={groups:[],index:0,completed:[],timer:null,paused:false};
+var titles={plate:['选择微孔板类型','请选择你要使用的微孔板类型'],selection:['选择加样区域','点击或拖动选择本次需要操作的孔位'],movement:['设置移动方式','设置单孔/N孔/整行/整列与遍历方向'],operation:['设置操作模式','选择手动或自动推进'],colors:['设置状态颜色','设置待加样、当前和完成状态'],calibration:['板位校准','用于实体孔板与 iPad 屏幕位置匹配']};
+function $(s){return document.querySelector(s)} function $$(s){return Array.prototype.slice.call(document.querySelectorAll(s))}
+function dims(){return state.plate===96?{r:8,c:12}:{r:16,c:24}} function rowName(r){return String.fromCharCode(65+r)} function id(r,c){return rowName(r)+(c+1)}
+function parse(w){var m=/([A-Z])(\d+)/.exec(w);return {r:m[1].charCodeAt(0)-65,c:+m[2]-1}}
+function toast(t){var e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(function(){e.classList.remove('show')},900)}
+function save(){localStorage.setItem(SKEY,JSON.stringify(state));$('#save').textContent='已自动保存'}
+function load(){try{var x=JSON.parse(localStorage.getItem(SKEY)||'null');if(x)state=Object.assign(state,x)}catch(e){}}
+function selectedSet(){return new Set(state.selected)}
+function order(){var d=dims(),a=[],sel=selectedSet(),r,c;if(state.trav==='horizontal'){for(r=0;r<d.r;r++)for(c=0;c<d.c;c++)if(sel.has(id(r,c)))a.push(id(r,c))}else{for(c=0;c<d.c;c++)for(r=0;r<d.r;r++)if(sel.has(id(r,c)))a.push(id(r,c))}return a}
+function groups(){
+var o=order(),d=dims(),g=[],i,r,c,arr;
+if(state.unit==='single')return o.map(function(x){return [x]});
+if(state.unit==='n'){for(i=0;i<o.length;i+=state.n)g.push(o.slice(i,i+state.n));return g}
+if(state.unit==='row'){for(r=0;r<d.r;r++){arr=[];for(c=0;c<d.c;c++)if(selectedSet().has(id(r,c)))arr.push(id(r,c));if(arr.length)g.push(arr)}return g}
+for(c=0;c<d.c;c++){arr=[];for(r=0;r<d.r;r++)if(selectedSet().has(id(r,c)))arr.push(id(r,c));if(arr.length)g.push(arr)}return g
+}
+function rangeText(){if(!state.selected.length)return '—';var ps=state.selected.map(parse),rs=ps.map(function(x){return x.r}),cs=ps.map(function(x){return x.c});return id(Math.min.apply(null,rs),Math.min.apply(null,cs))+':'+id(Math.max.apply(null,rs),Math.max.apply(null,cs))}
+function renderSelection(){
+var d=dims(),p=$('#selPlate');p.innerHTML='';p.style.gridTemplateColumns='26px repeat('+d.c+',34px)';var blank=document.createElement('div');p.appendChild(blank);
+for(var c=0;c<d.c;c++){var lab=document.createElement('div');lab.className='colLab';lab.textContent=c+1;p.appendChild(lab)}
+for(var r=0;r<d.r;r++){var rl=document.createElement('div');rl.className='rowLab';rl.textContent=rowName(r);p.appendChild(rl);for(c=0;c<d.c;c++){var w=document.createElement('div');w.className='well'+(selectedSet().has(id(r,c))?' selected':'');w.dataset.id=id(r,c);p.appendChild(w)}}
+$('#range').textContent=rangeText();$('#count').textContent=state.selected.length;bindPlatePointer();renderPreview()
+}
+function bindPlatePointer(){
+var p=$('#selPlate'),start=null,drag=false;
+p.onpointerdown=function(e){var w=e.target.closest('.well');if(!w)return;start=w.dataset.id;drag=false;p.setPointerCapture&&p.setPointerCapture(e.pointerId)}
+p.onpointermove=function(e){if(!start)return;var el=document.elementFromPoint(e.clientX,e.clientY),w=el&&el.closest&&el.closest('.well');if(w&&w.dataset.id!==start){drag=true;selectRect(start,w.dataset.id)}}
+p.onpointerup=function(e){if(!start)return;if(!drag)toggle(start);start=null;drag=false}
+}
+function selectRect(a,b){var A=parse(a),B=parse(b),sel=selectedSet(),r,c;for(r=Math.min(A.r,B.r);r<=Math.max(A.r,B.r);r++)for(c=Math.min(A.c,B.c);c<=Math.max(A.c,B.c);c++)sel.add(id(r,c));state.selected=Array.from(sel);save();renderSelection()}
+function toggle(x){var sel=selectedSet();sel.has(x)?sel.delete(x):sel.add(x);state.selected=Array.from(sel);save();renderSelection()}
+function renderPreview(){var o=order();$('#preview').textContent=o.length?(o.slice(0,6).join(' → ')+(o.length>6?' → …':'')):'—'}
+function sync(){
+$$('.plateCard').forEach(function(x){x.classList.toggle('active',+x.dataset.plate===state.plate)});
+$$('input[name=unit]').forEach(function(x){x.checked=x.value===state.unit});$$('input[name=trav]').forEach(function(x){x.checked=x.value===state.trav});$$('input[name=mode]').forEach(function(x){x.checked=x.value===state.mode});
+$('#ncount').value=state.n;$('#interval').value=state.interval;
+Object.keys(state.colors).forEach(function(k){var x=$('#c-'+k);if(x)x.value=state.colors[k]});
+renderSelection()
+}
+function panel(name){$$('.nav button').forEach(function(b){b.classList.toggle('active',b.dataset.p===name)});$$('.panel').forEach(function(p){p.classList.remove('active')});$('#p-'+name).classList.add('active');$('#title').textContent=titles[name][0];$('#desc').textContent=titles[name][1]}
+$$('.nav button').forEach(function(b){b.onclick=function(){panel(b.dataset.p)}})
+$$('.plateCard').forEach(function(b){b.onclick=function(){state.plate=+b.dataset.plate;state.selected=[];save();sync()}})
+$('#all').onclick=function(){var d=dims(),a=[];for(var r=0;r<d.r;r++)for(var c=0;c<d.c;c++)a.push(id(r,c));state.selected=a;save();renderSelection()}
+$('#clear').onclick=function(){state.selected=[];save();renderSelection()}
+$('#invert').onclick=function(){var d=dims(),sel=selectedSet(),a=[];for(var r=0;r<d.r;r++)for(var c=0;c<d.c;c++)if(!sel.has(id(r,c)))a.push(id(r,c));state.selected=a;save();renderSelection()}
+$('#rowA').onclick=function(){var d=dims(),sel=selectedSet();for(var c=0;c<d.c;c++)sel.add(id(0,c));state.selected=Array.from(sel);save();renderSelection()}
+$('#col1').onclick=function(){var d=dims(),sel=selectedSet();for(var r=0;r<d.r;r++)sel.add(id(r,0));state.selected=Array.from(sel);save();renderSelection()}
+$$('input[name=unit]').forEach(function(x){x.onchange=function(){state.unit=x.value;save();renderPreview()}})
+$$('input[name=trav]').forEach(function(x){x.onchange=function(){state.trav=x.value;save();renderPreview()}})
+$$('input[name=mode]').forEach(function(x){x.onchange=function(){state.mode=x.value;save()}})
+$('#nminus').onclick=function(){state.n=Math.max(2,state.n-1);$('#ncount').value=state.n;save()};$('#nplus').onclick=function(){state.n=Math.min(24,state.n+1);$('#ncount').value=state.n;save()}
+$('#ncount').onchange=function(){state.n=Math.max(2,Math.min(24,+this.value||8));save()}
+$('#iminus').onclick=function(){state.interval=Math.max(1,+(state.interval-.5).toFixed(1));$('#interval').value=state.interval;save()};$('#iplus').onclick=function(){state.interval=Math.min(60,+(state.interval+.5).toFixed(1));$('#interval').value=state.interval;save()}
+$('#interval').onchange=function(){state.interval=Math.max(1,Math.min(60,+this.value||5));save()}
+$$('input[type=color]').forEach(function(x){x.oninput=function(){state.colors[x.id.slice(2)]=x.value;save()}})
+$('#reset').onclick=function(){if(confirm('确定重置所有设置吗？')){localStorage.removeItem(SKEY);localStorage.removeItem(RKEY);location.reload()}}
+function renderRun(){
+var d=dims(),grid=$('#runGrid');grid.innerHTML='';grid.style.gridTemplateColumns='repeat('+d.c+',40px)';var cur=new Set(run.groups[run.index]||[]),done=new Set();run.completed.forEach(function(i){(run.groups[i]||[]).forEach(function(w){done.add(w)})});
+for(var r=0;r<d.r;r++)for(var c=0;c<d.c;c++){var w=document.createElement('div'),wid=id(r,c),color=state.colors.unselected;if(selectedSet().has(wid))color=state.colors.pending;if(done.has(wid))color=state.colors.completed;if(cur.has(wid)){color=state.colors.current;w.classList.add('current')}w.classList.add('runWell');w.style.background=color;grid.appendChild(w)}
+var g=run.groups[run.index]||[];$('#current').textContent=g.length===1?g[0]:(g.length?g[0]+' – '+g[g.length-1]:'—');$('#prog').textContent=run.index+' / '+run.groups.length
+}
+function saveRun(){localStorage.setItem(RKEY,JSON.stringify({groups:run.groups,index:run.index,completed:run.completed,plate:state.plate}))}
+function start(){if(!state.selected.length){alert('请先选择加样区域');panel('selection');return}run.groups=groups();run.index=0;run.completed=[];run.paused=false;$('#setup').classList.add('hidden');$('#run').classList.remove('hidden');$('#next').classList.toggle('hidden',state.mode==='auto');$('#pause').classList.toggle('hidden',state.mode!=='auto');renderRun();saveRun();if(state.mode==='auto')schedule()}
+function advance(){if(run.index>=run.groups.length-1){run.completed.push(run.index);finish();return}run.completed.push(run.index);run.index++;renderRun();saveRun();if(state.mode==='auto'&&!run.paused)schedule()}
+function undo(){if(run.index<=0){toast('已经是第一组');return}run.index--;run.completed=run.completed.filter(function(x){return x!==run.index});renderRun();saveRun()}
+function schedule(){clearTimeout(run.timer);$('#countdown').textContent=state.interval.toFixed(1)+' s';var left=state.interval;run.timer=setInterval(function(){left-=.1;if(left<=0){clearInterval(run.timer);$('#countdown').textContent='';advance()}else $('#countdown').textContent=Math.max(0,left).toFixed(1)+' s'},100)}
+function finish(){clearInterval(run.timer);localStorage.removeItem(RKEY);$('#doneText').textContent=state.plate+' 孔板 · '+state.selected.length+' 孔';$('#complete').classList.remove('hidden')}
+$('#start').onclick=start;$('#next').onclick=advance;$('#undo').onclick=undo;$('#return').onclick=function(){clearInterval(run.timer);$('#run').classList.add('hidden');$('#setup').classList.remove('hidden')}
+$('#pause').onclick=function(){run.paused=!run.paused;if(run.paused){clearInterval(run.timer);this.textContent='▶ 继续';$('#countdown').textContent='已暂停'}else{this.textContent='Ⅱ 暂停';schedule()}}
+$('#done').onclick=function(){$('#complete').classList.add('hidden');$('#run').classList.add('hidden');$('#setup').classList.remove('hidden');panel('selection')}
+load();sync();
+if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})})
+})();
+</script>
+</body>
+</html>
