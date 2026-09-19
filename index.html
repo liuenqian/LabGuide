@@ -358,9 +358,22 @@
   function toast(msg){const e=$('#toast');e.textContent=msg;e.classList.remove('hidden');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.add('hidden'),1500)}
   function markSaved(){const e=$('#saveStatus');if(!e)return;e.textContent='已自动保存';e.style.opacity='1';clearTimeout(e._t);e._t=setTimeout(()=>e.style.opacity='.45',800)}
   function orientationKey(){return matchMedia('(orientation: portrait)').matches?'portrait':'landscape'}
+  const BUILTIN_CALIBRATIONS={
+    '96-landscape':{
+      tl:{x:9.890829694323145,y:12.180505415162456},
+      tr:{x:79.5196506550219,y:12.541516245487367},
+      bl:{x:10,y:85.83393501805051},
+      br:{x:79.62882096069876,y:86.19494584837543},
+      saved:true,savedAt:null,name:'默认96孔板校准',builtIn:true
+    }
+  };
   function calKey(plate=state.plate){return `${plate}-${orientationKey()}`}
-  function defaultCalibration(){return {tl:{x:10,y:12},tr:{x:90,y:12},bl:{x:10,y:88},br:{x:90,y:88},saved:false,savedAt:null}}
-  function getCalibration(plate=state.plate){const k=calKey(plate);if(!calibration[k])calibration[k]=defaultCalibration();return calibration[k]}
+  function defaultCalibration(plate=state.plate,orientation=orientationKey()){
+    const preset=BUILTIN_CALIBRATIONS[`${plate}-${orientation}`];
+    if(preset)return clone(preset);
+    return {tl:{x:10,y:12},tr:{x:90,y:12},bl:{x:10,y:88},br:{x:90,y:88},saved:false,savedAt:null,name:''}
+  }
+  function getCalibration(plate=state.plate){const k=calKey(plate);if(!calibration[k])calibration[k]=defaultCalibration(plate,orientationKey());return calibration[k]}
 
   function loadReusableData(){
     try{const t=JSON.parse(localStorage.getItem(TEMPLATE_KEY)||'[]');taskTemplates=Array.isArray(t)?t:[]}catch(_){taskTemplates=[]}
@@ -563,7 +576,7 @@
 
   function renderColors(){const root=$('#colorRows');if(!root)return;const defs=[['unselected','未参与','不属于任何任务区'],['pending','待加样','当前步骤尚未完成'],['current','当前孔','当前需要操作'],['completed','已完成','当前步骤已完成'],['special','特殊','异常/提醒']];const palette=['#27384c','#1677f5','#20c777','#ffffff','#ffd84d','#ff8a65','#ff4d4f','#a864ff','#222b38'];root.innerHTML='';defs.forEach(([k,l,d])=>{const row=document.createElement('div');row.className='color-row';row.innerHTML=`<div class="color-label"><b>${l}</b><span>${d}</span></div><div class="swatches"></div><input class="color-input" type="color" value="${state.colors[k]}">`;const sw=$('.swatches',row);palette.forEach(c=>{const b=document.createElement('button');b.className='swatch'+(c.toLowerCase()===state.colors[k].toLowerCase()?' active':'');b.style.background=c;b.onclick=()=>{state.colors[k]=c;saveState();renderColors()};sw.append(b)});$('.color-input',row).oninput=e=>{state.colors[k]=e.target.value;saveState()};root.append(row)})}
 
-  function renderCalibrationManager(){const root=$('#calibrationCards');if(!root)return;root.innerHTML='';[96,384].forEach(p=>{const c=getCalibration(p),div=document.createElement('div');div.className='calibration-status-card'+(c.saved?' ok':'');div.innerHTML=`<strong>${p} 孔板 · ${orientationKey()==='landscape'?'横屏':'竖屏'}</strong><span>${c.saved?'✓ 已校准'+(c.name?' · '+escapeHtml(c.name):''):'尚未校准 · 首次运行时校准'}</span>`;root.append(div)});$('#quickVerifyToggle').checked=state.quickVerify;if($('#calibrationProfileName'))$('#calibrationProfileName').value=getCalibration().name||''}
+  function renderCalibrationManager(){const root=$('#calibrationCards');if(!root)return;root.innerHTML='';[96,384].forEach(p=>{const c=getCalibration(p),div=document.createElement('div');div.className='calibration-status-card'+(c.saved?' ok':'');div.innerHTML=`<strong>${p} 孔板 · ${orientationKey()==='landscape'?'横屏':'竖屏'}</strong><span>${c.saved?'✓ 已校准'+(c.name?' · '+escapeHtml(c.name):'')+(c.builtIn?' · 默认方案':''):'尚未校准 · 首次运行时校准'}</span>`;root.append(div)});$('#quickVerifyToggle').checked=state.quickVerify;if($('#calibrationProfileName'))$('#calibrationProfileName').value=getCalibration().name||''}
   function interpPoint(cal,u,v){return {x:(1-u)*(1-v)*cal.tl.x+u*(1-v)*cal.tr.x+(1-u)*v*cal.bl.x+u*v*cal.br.x,y:(1-u)*(1-v)*cal.tl.y+u*(1-v)*cal.tr.y+(1-u)*v*cal.bl.y+u*v*cal.br.y}}
   function stageWellSize(stage,plate){const d=plateDims(plate),c=getCalibration(plate),pxW=stage.clientWidth*Math.abs(c.tr.x-c.tl.x)/100/Math.max(d.cols-1,1),pxH=stage.clientHeight*Math.abs(c.bl.y-c.tl.y)/100/Math.max(d.rows-1,1);return Math.max(5,Math.min(pxW,pxH)*(plate===384?.55:.67))}
 
