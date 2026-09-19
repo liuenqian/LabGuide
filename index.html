@@ -42,6 +42,9 @@
 .template-name-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;margin:0 0 8px}.template-name-row label{font-size:10px;color:var(--muted);font-weight:800}.template-name-row input{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d6e1ed;border-radius:9px;background:#fff;color:var(--text);font-size:12px}.quick-template-bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:0 0 8px;padding:7px 9px;border:1px solid #e1e9f2;background:#f8fbff;border-radius:10px}.quick-template-bar>span{font-size:10px;color:var(--muted);font-weight:800;margin-right:2px}.value-plate .well.value-focus{box-shadow:0 0 0 4px rgba(22,119,245,.2),0 0 0 2px #1677f5 inset;transform:scale(1.04)}
 
 .voice-picker-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}.voice-picker-row select{min-width:0}.voice-card #voiceHint{display:block;margin-top:4px;color:var(--muted);font-size:9px}
+
+.compact-run-strip{display:flex!important;align-items:center;gap:7px;margin-bottom:6px;min-height:34px}.compact-run-strip>div,.compact-repeat{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:9px;padding:5px 8px!important}.run-status-chain{display:flex;align-items:center;gap:6px;min-width:0;flex:1}.run-status-chip{display:inline-flex!important;align-items:center;gap:5px;min-width:0;color:#3d556f}.run-status-chip strong{font-size:11px!important;margin:0!important;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.run-status-chip small{font-size:9px;color:var(--muted);white-space:nowrap}.run-status-sep{font-size:14px!important;color:#9aabba!important;line-height:1}.status-dot{display:inline-block!important;width:8px;height:8px;border-radius:50%;background:#8ea2b8;flex:0 0 auto}.step-dot{background:#1677f5}.current-dot{background:var(--green);box-shadow:0 0 0 3px rgba(32,199,119,.14)}.run-current-mini,.run-volume-mini{display:flex!important;align-items:center;gap:5px;white-space:nowrap}.run-current-mini span:not(.status-dot),.run-volume-mini span{font-size:9px!important;color:var(--muted)}.run-current-mini strong,.run-volume-mini strong{font-size:12px!important;margin:0!important}.run-current-mini strong{color:var(--green)}.run-volume-mini strong{color:#17395c}.compact-repeat{width:34px;height:32px;padding:0!important;display:grid;place-items:center;font-size:14px}.compact-run-strip .voice-repeat{font-weight:700}.compact-run-strip .current-cell strong{font-size:12px!important}
+@media(max-width:1080px){.run-status-chip strong{max-width:110px}.compact-run-strip{gap:5px}.compact-run-strip>div{padding:4px 6px!important}}
 </style>
   <title>LabGuide v1.3</title>
 </head>
@@ -287,12 +290,15 @@
       </section>
 
       <section id="runPanel" class="run-panel hidden">
-        <div id="runTopStrip" class="run-top-strip">
-          <div><span>任务</span><strong id="runTaskName">—</strong></div>
-          <div><span>试剂</span><strong id="runStepName">—</strong></div>
-          <div class="current-cell"><span>当前孔</span><strong id="currentGroupLabel">—</strong></div>
-          <div><span>当前体积</span><strong id="currentValueLabel">—</strong></div>
-          <button id="repeatVoiceBtn" class="voice-repeat">🔊 再播一次</button>
+        <div id="runTopStrip" class="run-top-strip compact-run-strip">
+          <div class="run-status-chain">
+            <span class="run-status-chip"><i id="runTaskDot" class="status-dot"></i><strong id="runTaskName">—</strong></span>
+            <span class="run-status-sep">›</span>
+            <span class="run-status-chip"><i id="runStepDot" class="status-dot step-dot"></i><strong id="runStepName">—</strong><small id="runStepIndex">—</small></span>
+          </div>
+          <div class="run-current-mini"><span class="status-dot current-dot"></span><span>当前孔</span><strong id="currentGroupLabel">—</strong></div>
+          <div class="run-volume-mini"><span>体积</span><strong id="currentValueLabel">—</strong></div>
+          <button id="repeatVoiceBtn" class="voice-repeat compact-repeat" aria-label="再播一次">🔊</button>
         </div>
         <div id="runStage" class="plate-stage run-stage"></div>
         <div class="run-footer">
@@ -598,7 +604,7 @@
   }
   function currentAction(){return run.actions[run.index]||null}function nextAction(){return run.actions[run.index+1]||null}
   function renderRun(){
-    const a=currentAction();if(!a)return;$('#runTaskName').textContent=a.taskName;$('#runStepName').textContent=a.stepName;$('#currentGroupLabel').textContent=a.well;const pipWarn=pipetteWarning(a);$('#currentValueLabel').textContent=a.value!==''?`${formatNum(a.value)} ${a.unit}${pipWarn?' ⚠':''}`:'—';$('#currentValueLabel').title=pipWarn||'';$('#progressLabel').textContent=`${run.index} / ${run.actions.length}`;$('#progressBar').style.width=`${run.actions.length?run.index/run.actions.length*100:0}%`;$('#runModeLabel').textContent=`模式：${state.opMode==='auto'?'自动':'手动'}`;$('#pauseAutoBtn').classList.toggle('hidden',state.opMode!=='auto');$('#nextBtn').classList.toggle('hidden',state.opMode==='auto');const n=nextAction();$('#nextPreview').textContent=n?`${n.well}${n.value!==''?` · ${formatNum(n.value)} ${n.unit}`:''}`:'完成';renderRunStage();
+    const a=currentAction();if(!a)return;$('#runTaskName').textContent=a.taskName;$('#runStepName').textContent=a.stepName;$('#currentGroupLabel').textContent=a.well;const activeRunTask=state.tasks.find(t=>t.id===a.taskId),stepIdx=Math.max(0,activeRunTask?.steps.findIndex(s=>s.id===a.stepId)??0),stepTotal=activeRunTask?.steps.length||1;if($('#runTaskDot'))$('#runTaskDot').style.background=a.taskColor||activeRunTask?.color||'#1677f5';if($('#runStepDot'))$('#runStepDot').style.background=['#1677f5','#8b5cf6','#e7a11b','#20c777','#ef6b6b'][stepIdx%5];if($('#runStepIndex'))$('#runStepIndex').textContent=`${stepIdx+1}/${stepTotal}`;const pipWarn=pipetteWarning(a);$('#currentValueLabel').textContent=a.value!==''?`${formatNum(a.value)} ${a.unit}${pipWarn?' ⚠':''}`:'—';$('#currentValueLabel').title=pipWarn||'';$('#progressLabel').textContent=`${run.index} / ${run.actions.length}`;$('#progressBar').style.width=`${run.actions.length?run.index/run.actions.length*100:0}%`;$('#runModeLabel').textContent=`模式：${state.opMode==='auto'?'自动':'手动'}`;$('#pauseAutoBtn').classList.toggle('hidden',state.opMode!=='auto');$('#nextBtn').classList.toggle('hidden',state.opMode==='auto');const n=nextAction();$('#nextPreview').textContent=n?`${n.well}${n.value!==''?` · ${formatNum(n.value)} ${n.unit}`:''}`:'完成';renderRunStage();
   }
   function renderRunStage(){
     const stage=$('#runStage');stage.innerHTML='';stage.classList.toggle('light-stage',(state.plateBackground||'dark')==='light');stage.classList.toggle('calibrating',run.calibrationMode);
