@@ -167,6 +167,32 @@
   .app-shell.run-active.phone-mode{grid-template-columns:clamp(100px,19.2vw,122px) minmax(0,1fr)}
   .app-shell.run-active.phone-mode .main-panel{padding:2px}
 }
+
+/* v1.3 visual polish */
+@media(min-width:1081px){
+  .side-nav{gap:3px;padding-top:5px}
+  .nav-item{background:transparent;border:1px solid transparent;border-radius:11px;padding:9px 10px;transition:.15s background,.15s color}
+  .nav-item:hover{background:#f5f8fc}
+  .nav-item.active{background:#eaf3ff;border-color:#e1edfb}
+  .resume-banner{padding:8px 12px;border-radius:12px;margin-bottom:8px}
+  .resume-banner strong{font-size:13px}
+  .resume-banner span{font-size:11px}
+  .resume-actions .ghost-btn,.resume-actions .primary-btn{padding:7px 11px}
+  .selection-mode-bar{padding:5px 6px;margin-bottom:7px;border-radius:12px}
+  .mode-btn{padding:6px 9px;font-size:12px}
+  .task-tabs{padding-bottom:6px}
+  .task-tab{padding:6px 10px}
+  .selection-summary.card{padding:14px}
+  .task-summary-head{align-items:center}
+  .selection-summary .big-metric{font-size:20px;margin:6px 0 1px}
+  .selection-summary hr{margin:11px 0}
+  .form-grid.compact{gap:7px}
+  .form-grid.compact input,.form-grid.compact select{border-radius:9px;background:#fbfdff}
+}
+.card{border-radius:16px;box-shadow:0 6px 20px rgba(50,82,120,.075)}
+.ghost-btn,.primary-btn{border-radius:10px}
+.form-grid input,.form-grid select,.value-tools input,.value-tools select,.value-tools textarea,.form-line select,.modal-card input,.modal-card select{border-radius:10px}
+
 </style>
   <title>LabGuide v1.3</title>
 </head>
