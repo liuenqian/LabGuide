@@ -50,12 +50,12 @@
 .app-shell.run-active .run-sidebar>.brand{display:none!important}
 .app-shell.run-active .run-sidebar{grid-template-rows:1fr;padding:7px}
 .app-shell.run-active .run-actions{height:100%}
-.app-shell.run-active.phone-mode{grid-template-columns:clamp(116px,22vw,148px) minmax(0,1fr)}
-.app-shell.run-active.phone-mode .main-panel{padding:4px 5px}
+.app-shell.run-active.phone-mode{grid-template-columns:clamp(104px,19.2vw,126px) minmax(0,1fr);width:100dvw;height:100dvh;max-width:none;max-height:none}
+.app-shell.run-active.phone-mode .main-panel{padding:2px 3px}
 .app-shell.run-active.phone-mode .run-top-strip,
 .app-shell.run-active.phone-mode .run-footer{display:none!important}
 .app-shell.run-active.phone-mode .run-panel{height:100%;min-height:0}
-.app-shell.run-active.phone-mode .run-stage{min-height:0;height:100%;border-radius:8px}
+.app-shell.run-active.phone-mode .run-stage{min-height:0;height:100%;width:100%;border-radius:6px}
 .app-shell.run-active.phone-mode .run-sidebar{border-right:1px solid #cfd9e5}
 .app-shell.run-active.phone-mode .run-actions{grid-template-rows:1fr 1fr 2.25fr auto;gap:5px}
 .app-shell.run-active.phone-mode .run-action{border-radius:11px}
@@ -65,8 +65,8 @@
 .app-shell.run-active.phone-mode .big-next small{font-size:9px}
 .app-shell.run-active.ipad-mode .run-sidebar{padding:8px}
 @media(max-width:900px){
-  .app-shell.run-active.phone-mode{grid-template-columns:clamp(108px,21vw,138px) minmax(0,1fr)}
-  .app-shell.run-active.phone-mode .main-panel{padding:3px 4px}
+  .app-shell.run-active.phone-mode{grid-template-columns:clamp(100px,19.2vw,122px) minmax(0,1fr)}
+  .app-shell.run-active.phone-mode .main-panel{padding:2px}
 }
 </style>
   <title>LabGuide v1.3</title>
@@ -289,7 +289,7 @@
           <div class="card">
             <h2>显示设置</h2>
             <p>孔板显示区可独立选择黑底或白底，不影响已经保存的孔位校准。</p>
-            <label class="form-line">运行界面模式<select id="runDisplayModeSelect"><option value="ipad" selected>iPad 模式</option><option value="phone">手机模式</option></select><small>iPad：保留精简状态栏和进度；手机：最终加样页只显示左侧操作键 + 孔板，不显示顶部任务栏、底部进度和 LabGuide 标识。</small></label>
+            <label class="form-line">运行界面模式<select id="runDisplayModeSelect"><option value="ipad" selected>iPad 模式</option><option value="phone">手机模式 · iPhone 17 Pro Max</option></select><small>手机模式按 iPhone 17 Pro Max 横屏优化（2868 × 1320，460 ppi）。最终页只保留左侧操作键 + 孔板；手机孔位使用独立校准。</small></label>
             <label class="form-line">孔板背景<select id="plateBackgroundSelect"><option value="dark">黑色（高对比）</option><option value="light" selected>白色（明亮）</option></select></label>
             <div class="toggle-row"><div><b>显示坐标标记</b><span>96孔板显示 A–H 与 1–12；384孔板显示 A–P 与 1–24</span></div><input id="showCoordinateToggle" type="checkbox" checked /></div>
           </div>
@@ -395,6 +395,11 @@
       bl:{x:10,y:85.83393501805051},
       br:{x:79.62882096069876,y:86.19494584837543},
       saved:true,savedAt:null,name:'默认96孔板校准',builtIn:true
+    },
+    '96-landscape-phone':{
+      tl:{x:8,y:7},tr:{x:88,y:7},bl:{x:8,y:93},br:{x:88,y:93},
+      saved:false,savedAt:null,name:'iPhone 17 Pro Max · 96孔初始布局',builtIn:true,
+      device:'iPhone 17 Pro Max',displayPx:'2868×1320',ppi:460
     }
   };
   function calKey(plate=state.plate,mode=state.runDisplayMode||'ipad'){return `${plate}-${orientationKey()}-${mode}`}
@@ -616,7 +621,7 @@
 
   function renderColors(){const root=$('#colorRows');if(!root)return;const defs=[['unselected','未参与','不属于任何任务区'],['pending','待加样','当前步骤尚未完成'],['current','当前孔','当前需要操作'],['completed','已完成','当前步骤已完成'],['special','特殊','异常/提醒']];const palette=['#27384c','#1677f5','#20c777','#ffffff','#ffd84d','#ff8a65','#ff4d4f','#a864ff','#222b38'];root.innerHTML='';defs.forEach(([k,l,d])=>{const row=document.createElement('div');row.className='color-row';row.innerHTML=`<div class="color-label"><b>${l}</b><span>${d}</span></div><div class="swatches"></div><input class="color-input" type="color" value="${state.colors[k]}">`;const sw=$('.swatches',row);palette.forEach(c=>{const b=document.createElement('button');b.className='swatch'+(c.toLowerCase()===state.colors[k].toLowerCase()?' active':'');b.style.background=c;b.onclick=()=>{state.colors[k]=c;saveState();renderColors()};sw.append(b)});$('.color-input',row).oninput=e=>{state.colors[k]=e.target.value;saveState()};root.append(row)})}
 
-  function renderCalibrationManager(){const root=$('#calibrationCards');if(!root)return;root.innerHTML='';[96,384].forEach(p=>{const c=getCalibration(p),div=document.createElement('div');div.className='calibration-status-card'+(c.saved?' ok':'');div.innerHTML=`<strong>${p} 孔板 · ${orientationKey()==='landscape'?'横屏':'竖屏'} · ${state.runDisplayMode==='phone'?'手机模式':'iPad模式'}</strong><span>${c.saved?'✓ 已校准'+(c.name?' · '+escapeHtml(c.name):'')+(c.builtIn?' · 默认方案':''):'尚未校准 · 首次运行时校准'}</span>`;root.append(div)});$('#quickVerifyToggle').checked=state.quickVerify;if($('#calibrationProfileName'))$('#calibrationProfileName').value=getCalibration().name||''}
+  function renderCalibrationManager(){const root=$('#calibrationCards');if(!root)return;root.innerHTML='';[96,384].forEach(p=>{const c=getCalibration(p),div=document.createElement('div');div.className='calibration-status-card'+(c.saved?' ok':'');div.innerHTML=`<strong>${p} 孔板 · ${orientationKey()==='landscape'?'横屏':'竖屏'} · ${state.runDisplayMode==='phone'?'手机模式 / iPhone 17 Pro Max':'iPad模式'}</strong><span>${c.saved?'✓ 已校准'+(c.name?' · '+escapeHtml(c.name):'')+(c.builtIn?' · 默认方案':''):'尚未校准 · 已载入设备初始布局，首次运行微调'}</span>`;root.append(div)});$('#quickVerifyToggle').checked=state.quickVerify;if($('#calibrationProfileName'))$('#calibrationProfileName').value=getCalibration().name||''}
   function interpPoint(cal,u,v){return {x:(1-u)*(1-v)*cal.tl.x+u*(1-v)*cal.tr.x+(1-u)*v*cal.bl.x+u*v*cal.br.x,y:(1-u)*(1-v)*cal.tl.y+u*(1-v)*cal.tr.y+(1-u)*v*cal.bl.y+u*v*cal.br.y}}
   function stageWellSize(stage,plate){const d=plateDims(plate),c=getCalibration(plate),pxW=stage.clientWidth*Math.abs(c.tr.x-c.tl.x)/100/Math.max(d.cols-1,1),pxH=stage.clientHeight*Math.abs(c.bl.y-c.tl.y)/100/Math.max(d.rows-1,1);return Math.max(5,Math.min(pxW,pxH)*(plate===384?.55:.67))}
 
