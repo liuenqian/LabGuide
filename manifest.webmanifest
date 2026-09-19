@@ -1,0 +1,10 @@
+{
+  "name":"LabGuide 微孔板加样引导器",
+  "short_name":"LabGuide",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#eef5ff",
+  "theme_color":"#eef5ff",
+  "orientation":"landscape"
+}
