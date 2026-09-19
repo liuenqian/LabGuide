@@ -252,9 +252,9 @@
           <div class="card voice-card">
             <div class="section-toolbar"><div><h2>语音导航</h2><p>点击“下一个”后播报下一枪；体积变化时重点提醒调枪。</p></div><button id="testVoiceBtn" class="ghost-btn small">🔊 测试语音</button></div>
             <div class="toggle-row"><div><b>启用语音</b><span>使用 iPad 系统语音合成</span></div><input id="voiceEnabled" type="checkbox" checked /></div>
-            <label class="form-line">播报模式<select id="voiceMode"><option value="full">完整：试剂 + 孔位 + 体积</option><option value="standard" selected>标准：孔位 + 体积</option><option value="volume">只播体积：60微升</option><option value="compact">精简：体积相同只播孔位</option></select><small>“只播体积”模式下，不播孔位、试剂切换或调枪提示，只读当前体积。</small></label>
+            <label class="form-line">播报模式<select id="voiceMode"><option value="full">完整：试剂 + 孔位 + 体积</option><option value="standard">标准：孔位 + 体积</option><option value="volume" selected>只播体积：60微升</option><option value="compact">精简：体积相同只播孔位</option></select><small>“只播体积”模式下，不播孔位、试剂切换或调枪提示，只读当前体积。</small></label>
             <label class="form-line">发音人<div class="voice-picker-row"><select id="voiceSelect"><option value="">系统默认中文语音</option></select><button id="refreshVoicesBtn" class="ghost-btn small" type="button">刷新</button></div><small id="voiceHint">仅显示这台 iPad / Safari 当前可用的中文发音人。</small></label>
-            <div class="toggle-row"><div><b>体积变化重点提醒</b><span>例如“注意，调整移液器至40微升，A4”</span></div><input id="emphasizeVolume" type="checkbox" checked /></div>
+            <div class="toggle-row"><div><b>体积变化重点提醒</b><span>例如“注意，调整移液器至40微升，A4”</span></div><input id="emphasizeVolume" type="checkbox" /></div>
             <div class="toggle-row"><div><b>试剂切换提醒</b><span>进入下一步骤时提醒更换试剂</span></div><input id="reagentSwitchVoice" type="checkbox" checked /></div>
             <label class="form-line">语速<input id="voiceRate" type="range" min="0.7" max="1.4" step="0.1" value="1" /></label>
           </div>
@@ -266,7 +266,7 @@
           <div class="card">
             <h2>显示设置</h2>
             <p>孔板显示区可独立选择黑底或白底，不影响已经保存的孔位校准。</p>
-            <label class="form-line">孔板背景<select id="plateBackgroundSelect"><option value="dark">黑色（高对比）</option><option value="light">白色（明亮）</option></select></label>
+            <label class="form-line">孔板背景<select id="plateBackgroundSelect"><option value="dark">黑色（高对比）</option><option value="light" selected>白色（明亮）</option></select></label>
             <div class="toggle-row"><div><b>显示坐标标记</b><span>96孔板显示 A–H 与 1–12；384孔板显示 A–P 与 1–24</span></div><input id="showCoordinateToggle" type="checkbox" checked /></div>
           </div>
           <div class="card"><h2>孔位状态颜色</h2><p>运行界面使用这些状态色。</p><div id="colorRows" class="color-rows"></div></div>
@@ -328,7 +328,7 @@
   const TEMPLATE_KEY='labguide-v1.3-task-templates';
   const HISTORY_KEY='labguide-v1.3-history';
   const TASK_COLORS=['#1677f5','#20c777','#a864ff','#ff8a65','#e3aa19','#f25f8b','#42a5b8'];
-  const defaultColors={unselected:'#27384c',pending:'#1677f5',current:'#20c777',completed:'#f1f5f9',special:'#ff4d4f'};
+  const defaultColors={unselected:'#ffffff',pending:'#1677f5',current:'#20c777',completed:'#f1f5f9',special:'#ff4d4f'};
 
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const rowName=i=>String.fromCharCode(65+i);
@@ -348,7 +348,7 @@
     return task;
   }
 
-  const state={plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'dark',showCoordinates:true,voice:{enabled:true,mode:'standard',voiceURI:'',emphasizeVolume:true,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'};
+  const state={plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'light',showCoordinates:true,voice:{enabled:true,mode:'volume',voiceURI:'',emphasizeVolume:false,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'};
   const run={active:false,actions:[],index:0,startedAt:null,timer:null,countdownTimer:null,nextAt:null,paused:false,calibrationMode:false,log:[],historyId:null};
   let calibration={};
   let taskTemplates=[];
@@ -452,7 +452,7 @@
     loadReusableData();
     try{
       const raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-      if(raw)Object.assign(state,raw,{colors:{...defaultColors,...(raw.colors||{})},voice:{enabled:true,mode:'standard',voiceURI:'',emphasizeVolume:true,reagentSwitch:true,rate:1,...(raw.voice||{})},selectionHistory:[],rectAnchor:null});
+      if(raw)Object.assign(state,raw,{colors:{...defaultColors,...(raw.colors||{})},voice:{enabled:true,mode:'volume',voiceURI:'',emphasizeVolume:false,reagentSwitch:true,rate:1,...(raw.voice||{})},selectionHistory:[],rectAnchor:null});
       const c=JSON.parse(localStorage.getItem(CAL_KEY)||'null');
       if(c)calibration=c; else {const old=JSON.parse(localStorage.getItem('labguide-v1-calibration')||'null');if(old){Object.entries(old).forEach(([p,v])=>calibration[`${p}-landscape`]=v)}}
     }catch(e){console.warn(e)}
@@ -681,7 +681,7 @@
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`LabGuide_${new Date(run.startedAt).toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  function resetAll(){if(!confirm('确定重置任务、数值和设置？已保存的校准将保留。'))return;const keepCal=calibration;localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(RUN_KEY);Object.assign(state,{plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'dark',showCoordinates:true,voice:{enabled:true,mode:'standard',voiceURI:'',emphasizeVolume:true,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'});calibration=keepCal;ensureDefaults();saveState();syncUI();renderHistoryViews();toast('已重置当前设置，模板、记录和校准均保留')}
+  function resetAll(){if(!confirm('确定重置任务、数值和设置？已保存的校准将保留。'))return;const keepCal=calibration;localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(RUN_KEY);Object.assign(state,{plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},plateBackground:'light',showCoordinates:true,voice:{enabled:true,mode:'volume',voiceURI:'',emphasizeVolume:false,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'});calibration=keepCal;ensureDefaults();saveState();syncUI();renderHistoryViews();toast('已重置当前设置，模板、记录和校准均保留')}
 
   function bindUI(){
     $$('.nav-item').forEach(b=>b.onclick=()=>setPanel(b.dataset.panel));$$('.plate-card').forEach(c=>c.onclick=()=>{state.plate=Number(c.dataset.plate);sanitizeTasks();state.rectAnchor=null;saveState();syncUI()});
