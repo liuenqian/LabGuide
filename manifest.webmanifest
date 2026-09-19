@@ -12,5 +12,5 @@
   "background_color": "#eef5ff",
   "theme_color": "#eef5ff",
   "orientation": "landscape",
-  "description": "LabGuide v1.1：微孔板智能选区、分任务加样、孔内数值、语音导航与一次校准长期复用。"
+  "description": "LabGuide v1.2：区域与任务合并、多次加样任务、逐孔体积、黑白孔板背景、坐标标记、语音导航与侧键一次校准。"
 }
