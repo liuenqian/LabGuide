@@ -431,8 +431,8 @@
     },
     '96-landscape-phone':{
       tl:{x:8,y:7},tr:{x:88,y:7},bl:{x:8,y:93},br:{x:88,y:93},
-      saved:false,savedAt:null,name:'iPhone 17 Pro Max · 96孔初始布局',builtIn:true,
-      device:'iPhone 17 Pro Max',displayPx:'2868×1320',ppi:460
+      saved:false,savedAt:null,name:'iPhone 17 Pro Max · 固定孔距模式',builtIn:true,
+      device:'iPhone 17 Pro Max',displayPx:'2868×1320',ppi:460,fixedPhysicalPitch:true
     }
   };
   function detectedRunDisplayMode(){
@@ -674,7 +674,27 @@
 
   function renderCalibrationManager(){const root=$('#calibrationCards');if(!root)return;root.innerHTML='';[96,384].forEach(p=>{const c=getCalibration(p),div=document.createElement('div');div.className='calibration-status-card'+(c.saved?' ok':'');div.innerHTML=`<strong>${p} 孔板 · ${orientationKey()==='landscape'?'横屏':'竖屏'} · ${resolvedRunDisplayMode()==='phone'?'手机模式 / iPhone 17 Pro Max':'iPad模式'}</strong><span>${c.saved?'✓ 已校准'+(c.name?' · '+escapeHtml(c.name):'')+(c.builtIn?' · 默认方案':''):'尚未校准 · 已载入设备初始布局，首次运行微调'}</span>`;root.append(div)});$('#quickVerifyToggle').checked=state.quickVerify;if($('#calibrationProfileName'))$('#calibrationProfileName').value=getCalibration().name||''}
   function interpPoint(cal,u,v){return {x:(1-u)*(1-v)*cal.tl.x+u*(1-v)*cal.tr.x+(1-u)*v*cal.bl.x+u*v*cal.br.x,y:(1-u)*(1-v)*cal.tl.y+u*(1-v)*cal.tr.y+(1-u)*v*cal.bl.y+u*v*cal.br.y}}
-  function stageWellSize(stage,plate){const d=plateDims(plate),c=getCalibration(plate),pxW=stage.clientWidth*Math.abs(c.tr.x-c.tl.x)/100/Math.max(d.cols-1,1),pxH=stage.clientHeight*Math.abs(c.bl.y-c.tl.y)/100/Math.max(d.rows-1,1);return Math.max(5,Math.min(pxW,pxH)*(plate===384?.55:.67))}
+  function physicalPlateMetrics(plate=state.plate){
+    // Standard microplate center-to-center pitch: 96-well 9 mm; 384-well 4.5 mm.
+    // Dot diameter follows the same physical-scale concept and is NOT shrunk to fit the phone viewport.
+    return plate===384?{pitchMm:4.5,dotMm:2.5}:{pitchMm:9,dotMm:6.0}
+  }
+  function phoneCssPxPerMm(){
+    // iOS CSS pixels are logical points, not panel pixels. Calibrate the logical scale from the
+    // reported iPhone 17 Pro Max screen: 1320 panel px / 460 ppi = 72.89 mm short side.
+    // screen short side is typically 440 CSS px => about 6.04 CSS px/mm.
+    const shortCss=Math.min(screen.width||innerWidth,screen.height||innerHeight);
+    const physicalShortMm=1320/460*25.4;
+    return shortCss/physicalShortMm;
+  }
+  function fixedPhonePlateGeometry(stage,plate,cal){
+    if(resolvedRunDisplayMode()!=='phone')return null;
+    const d=plateDims(plate),m=physicalPlateMetrics(plate),pxPerMm=phoneCssPxPerMm(),rect=stage.getBoundingClientRect();
+    const pitch=m.pitchMm*pxPerMm,dot=m.dotMm*pxPerMm;
+    const tlPx={x:rect.width*cal.tl.x/100,y:rect.height*cal.tl.y/100};
+    return {pitch,dot,point:(col,row)=>({x:(tlPx.x+col*pitch)/Math.max(1,rect.width)*100,y:(tlPx.y+row*pitch)/Math.max(1,rect.height)*100}),rows:d.rows,cols:d.cols}
+  }
+  function stageWellSize(stage,plate){const c=getCalibration(plate),fixed=fixedPhonePlateGeometry(stage,plate,c);if(fixed)return fixed.dot;const d=plateDims(plate),pxW=stage.clientWidth*Math.abs(c.tr.x-c.tl.x)/100/Math.max(d.cols-1,1),pxH=stage.clientHeight*Math.abs(c.bl.y-c.tl.y)/100/Math.max(d.rows-1,1);return Math.max(5,Math.min(pxW,pxH)*(plate===384?.55:.67))}
 
   function buildActions(){
     const out=[];state.tasks.forEach(t=>{if(!t.wells.length)return;t.steps.forEach(s=>{const ordered=orderedTaskWells(t,t.executionDirection),hasNums=ordered.some(w=>s.values[w]!==undefined&&s.values[w]!=='');ordered.forEach(w=>{const raw=s.values[w],num=Number(raw);if(hasNums&&Number.isFinite(num)&&num===0)return;if(hasNums&&raw===undefined)return;out.push({taskId:t.id,taskName:t.name,taskColor:t.color,stepId:s.id,stepName:s.name,unit:s.unit,pipette:s.pipette||'auto',tipPolicy:s.tipPolicy||'none',well:w,value:raw===undefined?'':raw})})})});return out;
@@ -698,24 +718,24 @@
   }
   function renderRunStage(){
     const stage=$('#runStage');stage.innerHTML='';stage.classList.toggle('light-stage',(state.plateBackground||'dark')==='light');stage.classList.toggle('calibrating',run.calibrationMode);
-    const d=plateDims(state.plate),cal=getCalibration(),size=stageWellSize(stage,state.plate),a=currentAction(),currentTask=state.tasks.find(t=>t.id===a?.taskId),currentStep=currentTask?.steps.find(s=>s.id===a?.stepId);const doneInStep=new Set(run.log.filter(x=>x.taskId===a?.taskId&&x.stepId===a?.stepId).map(x=>x.well));
-    for(let r=0;r<d.rows;r++)for(let c=0;c<d.cols;c++){const id=wellId(r,c),p=interpPoint(cal,c/(d.cols-1),r/(d.rows-1)),w=document.createElement('div'),owner=ownerOfWell(id);w.className='run-well';w.dataset.id=id;w.style.left=p.x+'%';w.style.top=p.y+'%';w.style.width=size+'px';w.style.height=size+'px';let color=state.colors.unselected,cls='unselected';if(owner){color=owner.id===a?.taskId?state.colors.pending:owner.color;cls='pending';w.style.opacity=owner.id===a?.taskId?'1':'.35'}if(doneInStep.has(id)){color=state.colors.completed;cls='completed'}if(id===a?.well){color=state.colors.current;cls='current';w.style.opacity='1'}w.style.background=color;w.classList.add(cls);if(owner?.id===a?.taskId&&currentStep?.values?.[id]!==undefined)w.textContent=formatNum(currentStep.values[id]);stage.append(w)}
+    const d=plateDims(state.plate),cal=getCalibration(),fixed=fixedPhonePlateGeometry(stage,state.plate,cal),size=stageWellSize(stage,state.plate),a=currentAction(),currentTask=state.tasks.find(t=>t.id===a?.taskId),currentStep=currentTask?.steps.find(s=>s.id===a?.stepId);const doneInStep=new Set(run.log.filter(x=>x.taskId===a?.taskId&&x.stepId===a?.stepId).map(x=>x.well));
+    for(let r=0;r<d.rows;r++)for(let c=0;c<d.cols;c++){const id=wellId(r,c),p=fixed?fixed.point(c,r):interpPoint(cal,c/(d.cols-1),r/(d.rows-1)),w=document.createElement('div'),owner=ownerOfWell(id);w.className='run-well';w.dataset.id=id;w.style.left=p.x+'%';w.style.top=p.y+'%';w.style.width=size+'px';w.style.height=size+'px';let color=state.colors.unselected,cls='unselected';if(owner){color=owner.id===a?.taskId?state.colors.pending:owner.color;cls='pending';w.style.opacity=owner.id===a?.taskId?'1':'.35'}if(doneInStep.has(id)){color=state.colors.completed;cls='completed'}if(id===a?.well){color=state.colors.current;cls='current';w.style.opacity='1'}w.style.background=color;w.classList.add(cls);if(owner?.id===a?.taskId&&currentStep?.values?.[id]!==undefined)w.textContent=formatNum(currentStep.values[id]);stage.append(w)}
     if(state.showCoordinates!==false){
-      for(let col=0;col<d.cols;col++){const p=interpPoint(cal,col/(d.cols-1),0),lab=document.createElement('div');lab.className='stage-coordinate';lab.textContent=col+1;lab.style.left=p.x+'%';lab.style.top=Math.max(2,p.y-5)+'%';stage.append(lab)}
-      for(let row=0;row<d.rows;row++){const p=interpPoint(cal,0,row/(d.rows-1)),lab=document.createElement('div');lab.className='stage-coordinate';lab.textContent=rowName(row);lab.style.left=Math.max(2,p.x-4.5)+'%';lab.style.top=p.y+'%';stage.append(lab)}
+      for(let col=0;col<d.cols;col++){const p=fixed?fixed.point(col,0):interpPoint(cal,col/(d.cols-1),0),lab=document.createElement('div');lab.className='stage-coordinate';lab.textContent=col+1;lab.style.left=p.x+'%';lab.style.top=Math.max(2,p.y-5)+'%';stage.append(lab)}
+      for(let row=0;row<d.rows;row++){const p=fixed?fixed.point(0,row):interpPoint(cal,0,row/(d.rows-1)),lab=document.createElement('div');lab.className='stage-coordinate';lab.textContent=rowName(row);lab.style.left=Math.max(2,p.x-4.5)+'%';lab.style.top=p.y+'%';stage.append(lab)}
     }
   }
   let calibrationPointIndex=0,calibrationStepPx=1;
-  function calibrationLabels(){const d=plateDims(state.plate);return [{key:'tl',label:'A1',desc:'整体位置'},{key:'tr',label:`A${d.cols}`,desc:'横向长度 / 方向'},{key:'bl',label:`${rowName(d.rows-1)}1`,desc:'纵向长度 / 方向'},{key:'verify',label:`${rowName(d.rows-1)}${d.cols}`,desc:'右下角验证'}]}
+  function calibrationLabels(){const d=plateDims(state.plate);if(resolvedRunDisplayMode()==='phone')return [{key:'tl',label:'A1',desc:'整体位置'},{key:'verifyTr',label:`A${d.cols}`,desc:'固定孔距验证'},{key:'verifyBl',label:`${rowName(d.rows-1)}1`,desc:'固定孔距验证'},{key:'verify',label:`${rowName(d.rows-1)}${d.cols}`,desc:'固定孔距验证'}];return [{key:'tl',label:'A1',desc:'整体位置'},{key:'tr',label:`A${d.cols}`,desc:'横向长度 / 方向'},{key:'bl',label:`${rowName(d.rows-1)}1`,desc:'纵向长度 / 方向'},{key:'verify',label:`${rowName(d.rows-1)}${d.cols}`,desc:'右下角验证'}]}
   function enterRunCalibration(){stopAuto();calibrationPointIndex=0;run.calibrationMode=true;$('#runCalibrationOverlay').classList.remove('hidden');$('.run-actions').classList.add('hidden');$('#calibrationSideControls').classList.remove('hidden');renderRunStage();addCalibrationHandles();updateCalibrationControls()}
   function updateCalibrationControls(){const steps=calibrationLabels(),s=steps[calibrationPointIndex];$('#calPointLabel').textContent=s.label;$('#calProgressLabel').textContent=`${calibrationPointIndex+1} / 4 · ${s.desc}`;$('#calPrevBtn').disabled=calibrationPointIndex===0;$('#calNextBtn').disabled=calibrationPointIndex===steps.length-1;$('.cal-step').forEach(b=>b.classList.toggle('active',Number(b.dataset.calStep)===calibrationStepPx))}
   function deriveFourth(cal){cal.br={x:Math.max(2,Math.min(98,cal.tr.x+cal.bl.x-cal.tl.x)),y:Math.max(2,Math.min(98,cal.tr.y+cal.bl.y-cal.tl.y))}}
-  function nudgeCalibration(dx,dy){const step=calibrationLabels()[calibrationPointIndex];if(step.key==='verify'){toast('H12 为验证点；如未对准，请返回 A12 或 H1 微调');return}const stage=$('#runStage'),rect=stage.getBoundingClientRect(),cal=getCalibration(),px=calibrationStepPx,dxp=dx*px/Math.max(1,rect.width)*100,dyp=dy*px/Math.max(1,rect.height)*100;
+  function nudgeCalibration(dx,dy){const step=calibrationLabels()[calibrationPointIndex];if(step.key.startsWith('verify')){toast(resolvedRunDisplayMode()==='phone'?'手机模式孔距固定；如整体偏移，请返回 A1 调整位置':'H12 为验证点；如未对准，请返回 A12 或 H1 微调');return}const stage=$('#runStage'),rect=stage.getBoundingClientRect(),cal=getCalibration(),px=calibrationStepPx,dxp=dx*px/Math.max(1,rect.width)*100,dyp=dy*px/Math.max(1,rect.height)*100;
     if(step.key==='tl'){['tl','tr','bl','br'].forEach(k=>{cal[k].x=Math.max(2,Math.min(98,cal[k].x+dxp));cal[k].y=Math.max(2,Math.min(98,cal[k].y+dyp))})}
     else {cal[step.key].x=Math.max(2,Math.min(98,cal[step.key].x+dxp));cal[step.key].y=Math.max(2,Math.min(98,cal[step.key].y+dyp));deriveFourth(cal)}
     cal.saved=false;saveState();renderRunStage();addCalibrationHandles()
   }
-  function addCalibrationHandles(){const stage=$('#runStage'),cal=getCalibration(),steps=calibrationLabels(),active=steps[calibrationPointIndex],points={tl:cal.tl,tr:cal.tr,bl:cal.bl,verify:cal.br};$('.cal-target',stage).forEach(x=>x.remove());steps.forEach(s=>{const p=points[s.key],h=document.createElement('div');h.className='cal-target'+(s.key===active.key?' active':'');h.style.left=p.x+'%';h.style.top=p.y+'%';h.innerHTML=`<label>${s.label}</label>`;stage.append(h)})}
+  function addCalibrationHandles(){const stage=$('#runStage'),cal=getCalibration(),steps=calibrationLabels(),active=steps[calibrationPointIndex],d=plateDims(state.plate),fixed=fixedPhonePlateGeometry(stage,state.plate,cal),points=fixed?{tl:fixed.point(0,0),verifyTr:fixed.point(d.cols-1,0),verifyBl:fixed.point(0,d.rows-1),verify:fixed.point(d.cols-1,d.rows-1)}:{tl:cal.tl,tr:cal.tr,bl:cal.bl,verify:cal.br};$('.cal-target',stage).forEach(x=>x.remove());steps.forEach(s=>{const p=points[s.key],h=document.createElement('div');h.className='cal-target'+(s.key===active.key?' active':'');h.style.left=p.x+'%';h.style.top=p.y+'%';h.innerHTML=`<label>${s.label}</label>`;stage.append(h)})}
   function leaveCalibrationUI(){$('#runCalibrationOverlay').classList.add('hidden');$('#calibrationSideControls').classList.add('hidden');$('.run-actions').classList.remove('hidden')}
   function saveRunCalibration(){const c=getCalibration();deriveFourth(c);c.saved=true;c.savedAt=Date.now();state.forceRecalibrate[calKey()]=false;saveState();run.calibrationMode=false;leaveCalibrationUI();renderRun();toast('校准已保存，以后无需重复校准');announceCurrent(null,currentAction());if(state.opMode==='auto')startAuto()}
   function quickVerify(){const stage=$('#runStage'),c=getCalibration();['tl','br'].forEach(k=>{const m=document.createElement('div');m.className='verify-marker';m.style.left=c[k].x+'%';m.style.top=c[k].y+'%';stage.append(m)});const f=$('#quickVerifyFlash');f.classList.remove('hidden');setTimeout(()=>{$$('.verify-marker',stage).forEach(x=>x.remove());f.classList.add('hidden')},1400)}
