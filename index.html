@@ -193,6 +193,21 @@
 .ghost-btn,.primary-btn{border-radius:10px}
 .form-grid input,.form-grid select,.value-tools input,.value-tools select,.value-tools textarea,.form-line select,.modal-card input,.modal-card select{border-radius:10px}
 
+
+/* v1.3 simplified task sidebar: selection defines layout; only execution order matters */
+.selection-summary #taskTypeSelect,
+.selection-summary label:has(#taskTypeSelect),
+.selection-summary #layoutDirection,
+.selection-summary label:has(#layoutDirection),
+.selection-summary #replicateCount,
+.selection-summary label:has(#replicateCount),
+.selection-summary #replicateDirection,
+.selection-summary label:has(#replicateDirection){display:none!important}
+.selection-summary .form-grid.compact{grid-template-columns:1fr!important}
+.selection-summary label:has(#executionDirection)::before{content:"加样顺序";font-weight:800;color:#4a6077}
+.selection-summary label:has(#executionDirection){font-size:0}
+.selection-summary label:has(#executionDirection) select{font-size:12px}
+
 </style>
   <title>LabGuide v1.3</title>
 </head>
