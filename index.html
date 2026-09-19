@@ -208,6 +208,7 @@
 .selection-summary label:has(#executionDirection){font-size:0}
 .selection-summary label:has(#executionDirection) select{font-size:12px}
 
+.run-voice-status{margin-top:10px;padding:8px 9px;border-radius:10px;background:#f4f8fc;color:#60758b;font-size:11px;font-weight:750;text-align:center;transition:.15s}.run-voice-status.listening{background:#edf9f3;color:#16895b}.run-voice-status.success{background:#edf5ff;color:#1677f5}.run-voice-status.error{background:#fff3f1;color:#d84b3e}.run-voice-status .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
 </style>
   <title>LabGuide v1.3</title>
 </head>
@@ -244,6 +245,7 @@
         <button id="backBtn" class="run-action secondary"><span class="run-icon">↶</span><span>回退</span></button>
         <button id="nextBtn" class="run-action primary big-next"><span class="next-circle">▶</span><strong>下一个</strong><small id="nextPreview">—</small></button>
         <button id="pauseAutoBtn" class="run-action secondary hidden"><span class="run-icon">Ⅱ</span><span>暂停</span></button>
+        <div id="runVoiceStatus" class="run-voice-status"><span class="dot"></span><span id="runVoiceStatusText">语音未监听</span></div>
       </div>
       <div id="calibrationSideControls" class="calibration-side-controls hidden">
         <div class="cal-side-title">板位校准</div>
@@ -426,7 +428,7 @@
             <small id="voiceCommandHint" class="muted-inline">语音控制需要浏览器支持语音识别；iPad / Safari 可用性以设备实际支持为准。</small>
           </div>
           <div class="card voice-card">
-            <div class="section-toolbar compact-card-heading"><h2>语音导航</h2><button id="testVoiceBtn" class="ghost-btn small">🔊 测试</button></div>
+            <div class="section-toolbar compact-card-heading"><h2>语音提醒</h2><button id="testVoiceBtn" class="ghost-btn small">🔊 测试</button></div>
             <div class="toggle-row"><div><b>启用语音</b><span>使用 iPad 系统语音合成</span></div><input id="voiceEnabled" type="checkbox" checked /></div>
             <div class="toggle-row"><div><b>标准品语音播报</b><span>仅控制标准曲线 / 标准品的体积等提示；样品默认不播报</span></div><input id="standardNarrationEnabled" type="checkbox" checked /></div>
             <label class="form-line">播报模式<select id="voiceMode"><option value="full">完整：试剂 + 孔位 + 体积</option><option value="standard">标准：孔位 + 体积</option><option value="volume" selected>只播体积：60微升</option><option value="compact">精简：体积相同只播孔位</option></select><small>“只播体积”模式下，不播孔位、试剂切换或调枪提示，只读当前体积。</small></label>
@@ -847,7 +849,7 @@
   }
   function currentAction(){return run.actions[run.index]||null}function nextAction(){return run.actions[run.index+1]||null}
   function renderRun(){
-    const a=currentAction();if(!a)return;$('#runTaskName').textContent=a.taskName;$('#runStepName').textContent=a.stepName;$('#currentGroupLabel').textContent=a.well;const activeRunTask=state.tasks.find(t=>t.id===a.taskId),stepIdx=Math.max(0,activeRunTask?.steps.findIndex(s=>s.id===a.stepId)??0),stepTotal=activeRunTask?.steps.length||1;if($('#runTaskDot'))$('#runTaskDot').style.background=a.taskColor||activeRunTask?.color||'#1677f5';if($('#runStepDot'))$('#runStepDot').style.background=['#1677f5','#8b5cf6','#e7a11b','#20c777','#ef6b6b'][stepIdx%5];if($('#runStepIndex'))$('#runStepIndex').textContent=`${stepIdx+1}/${stepTotal}`;const pipWarn=pipetteWarning(a);$('#currentValueLabel').textContent=a.value!==''?`${formatNum(a.value)} ${a.unit}${pipWarn?' ⚠':''}`:'—';$('#currentValueLabel').title=pipWarn||'';$('#progressLabel').textContent=`${run.index} / ${run.actions.length}`;$('#progressBar').style.width=`${run.actions.length?run.index/run.actions.length*100:0}%`;$('#runModeLabel').textContent=`模式：${state.opMode==='auto'?'自动':'手动'}`;$('#pauseAutoBtn').classList.toggle('hidden',state.opMode!=='auto');$('#nextBtn').classList.toggle('hidden',state.opMode==='auto');const n=nextAction();$('#nextPreview').textContent=n?`${n.well}${n.value!==''?` · ${formatNum(n.value)} ${n.unit}`:''}`:'完成';renderRunStage();
+    const a=currentAction();if(!a)return;$('#runTaskName').textContent=a.taskName;$('#runStepName').textContent=a.stepName;$('#currentGroupLabel').textContent=a.well;const activeRunTask=state.tasks.find(t=>t.id===a.taskId),stepIdx=Math.max(0,activeRunTask?.steps.findIndex(s=>s.id===a.stepId)??0),stepTotal=activeRunTask?.steps.length||1;if($('#runTaskDot'))$('#runTaskDot').style.background=a.taskColor||activeRunTask?.color||'#1677f5';if($('#runStepDot'))$('#runStepDot').style.background=['#1677f5','#8b5cf6','#e7a11b','#20c777','#ef6b6b'][stepIdx%5];if($('#runStepIndex'))$('#runStepIndex').textContent=`${stepIdx+1}/${stepTotal}`;const pipWarn=pipetteWarning(a);$('#currentValueLabel').textContent=a.value!==''?`${formatNum(a.value)} ${a.unit}${pipWarn?' ⚠':''}`:'—';$('#currentValueLabel').title=pipWarn||'';$('#progressLabel').textContent=`${run.index} / ${run.actions.length}`;$('#progressBar').style.width=`${run.actions.length?run.index/run.actions.length*100:0}%`;$('#runModeLabel').textContent=`模式：${state.opMode==='auto'?'自动':'手动'}`;$('#pauseAutoBtn').classList.toggle('hidden',state.opMode!=='auto');$('#nextBtn').classList.toggle('hidden',state.opMode==='auto');const n=nextAction();$('#nextPreview').textContent=n?`${n.well}${n.value!==''?` · ${formatNum(n.value)} ${n.unit}`:''}`:'完成';const rv=$('#runVoiceStatus'),rvt=$('#runVoiceStatusText');if(rv&&rvt){rv.className='run-voice-status '+(voiceCommandListening?'listening':'');rvt.textContent=voiceCommandListening?'正在监听':'语音未监听'}renderRunStage();
   }
   function renderRunStage(){
     const stage=$('#runStage');stage.innerHTML='';stage.classList.toggle('light-stage',(state.plateBackground||'dark')==='light');stage.classList.toggle('calibrating',run.calibrationMode);
@@ -893,13 +895,14 @@
 
   state.voice.commandsEnabled??=false;
   state.voice.standardNarrationEnabled??=true;
-  let voiceCommandRecognition=null,voiceCommandListening=false;
-  function setVoiceCommandUI(text,listening=false){voiceCommandListening=listening;const b=$('#voiceCommandBtn');if(b)b.textContent=listening?'⏹ 停止监听':'🎙️ 开始监听';const h=$('#voiceCommandHint');if(h&&text)h.textContent=text}
+  let voiceCommandRecognition=null,voiceCommandListening=false,lastVoiceCommandAt=0;
+  function setVoiceCommandUI(text,listening=false,status=''){voiceCommandListening=listening;const b=$('#voiceCommandBtn');if(b)b.textContent=listening?'⏹ 停止监听':'🎙️ 开始监听';const h=$('#voiceCommandHint');if(h&&text)h.textContent=text;const rs=$('#runVoiceStatus'),rt=$('#runVoiceStatusText');if(rs&&rt){rs.className='run-voice-status '+(status||(listening?'listening':''));rt.textContent=text|| (listening?'正在监听':'语音未监听')}}
   function stopVoiceCommands(){if(voiceCommandRecognition){try{voiceCommandRecognition.onend=null;voiceCommandRecognition.stop()}catch(e){}voiceCommandRecognition=null}setVoiceCommandUI('语音监听已停止。点击“开始监听”可重新开启。',false)}
   function handleVoiceCommand(text){
     const s=String(text||'').replace(/[，。！？\s]/g,'');
-    if(/下一个|下一步|继续下一个/.test(s)){advance();return true}
-    if(/上一个|上一步|返回一个/.test(s)){backOne();return true}
+    const now=Date.now();if(now-lastVoiceCommandAt<900)return false;
+    if(/下一个|下一步|下一孔|继续下一个/.test(s)){lastVoiceCommandAt=now;advance();setVoiceCommandUI('✓ 已执行：下一个',true,'success');setTimeout(()=>{if(voiceCommandListening)setVoiceCommandUI('正在监听：下一个 / 上一个 / 暂停 / 继续',true,'listening')},650);return true}
+    if(/上一个|上一步|上一孔|返回一个/.test(s)){lastVoiceCommandAt=now;backOne();setVoiceCommandUI('✓ 已执行：上一个',true,'success');setTimeout(()=>{if(voiceCommandListening)setVoiceCommandUI('正在监听：下一个 / 上一个 / 暂停 / 继续',true,'listening')},650);return true}
     if(/暂停|停一下/.test(s)){if(run.active&&!run.paused)togglePause();return true}
     if(/继续|恢复/.test(s)){if(run.active&&run.paused)togglePause();return true}
     return false
@@ -909,10 +912,10 @@
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){state.voice.commandsEnabled=false;saveState();setVoiceCommandUI('此浏览器没有可用的网页语音识别。请在 iPad Safari 中打开，或使用脚踏/键盘控制。',false);return}
     state.voice.commandsEnabled=true;saveState();
-    const r=new SR();voiceCommandRecognition=r;r.lang='zh-CN';r.continuous=true;r.interimResults=false;
+    const r=new SR();voiceCommandRecognition=r;r.lang='zh-CN';r.continuous=true;r.interimResults=true;
     r.onstart=()=>setVoiceCommandUI('正在监听：下一个 / 上一个 / 暂停 / 继续',true);
-    r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal){const heard=e.results[i][0].transcript;setVoiceCommandUI('听到：“'+heard+'”',true);handleVoiceCommand(heard)}}};
-    r.onerror=e=>{const map={'not-allowed':'麦克风权限未允许','audio-capture':'没有检测到麦克风','no-speech':'暂未听到语音','network':'语音识别网络服务不可用'};setVoiceCommandUI('语音识别：'+(map[e.error]||e.error||'发生错误'),false)};
+    r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const heard=e.results[i][0].transcript;if(handleVoiceCommand(heard))break;if(e.results[i].isFinal)setVoiceCommandUI('听到：“'+heard+'”',true,'listening')}};
+    r.onerror=e=>{const map={'not-allowed':'麦克风权限未允许','audio-capture':'没有检测到麦克风','no-speech':'暂未听到语音','network':'语音识别网络服务不可用'};setVoiceCommandUI('语音识别：'+(map[e.error]||e.error||'发生错误'),false,'error')};
     r.onend=()=>{voiceCommandRecognition=null;voiceCommandListening=false;setVoiceCommandUI('监听已结束。Safari 可能会自动结束一次识别，请点“开始监听”继续。',false)};
     try{r.start()}catch(e){setVoiceCommandUI('无法启动语音监听：'+(e.message||e.name||'未知错误'),false)}
   }
