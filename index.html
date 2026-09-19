@@ -64,6 +64,32 @@
 
 .selection-toolbar-compact{justify-content:flex-end;margin-bottom:4px;min-height:0}.selection-toolbar-compact .toolbar-buttons{margin-left:auto}.selection-workspace>.selection-toolbar-compact+.task-tabs{margin-top:0}
 
+
+/* v1.4.6 setup-page declutter */
+.history-toolbar-compact{align-items:center;margin-bottom:6px}
+.compact-card-heading{align-items:center}
+.compact-card-heading h2{margin:0}
+.calibration-manager>.calibration-cards:first-child{margin-top:0}
+@media(max-width:900px){
+  .app-shell.phone-mode:not(.run-active) .topbar{padding:0 2px 5px;margin-bottom:5px;min-height:0}
+  .app-shell.phone-mode:not(.run-active) .topbar h1{font-size:20px;line-height:1.05;margin:0}
+  .app-shell.phone-mode:not(.run-active) .topbar p{display:none}
+  .app-shell.phone-mode:not(.run-active) .save-status{display:none}
+  .app-shell.phone-mode:not(.run-active) .main-panel{padding:5px 6px 6px}
+  .app-shell.phone-mode:not(.run-active) .panel>.card,
+  .app-shell.phone-mode:not(.run-active) .selection-workspace,
+  .app-shell.phone-mode:not(.run-active) .selection-summary,
+  .app-shell.phone-mode:not(.run-active) .values-workspace,
+  .app-shell.phone-mode:not(.run-active) .value-tools{border-radius:12px}
+  .app-shell.phone-mode:not(.run-active) .card{padding:9px}
+  .app-shell.phone-mode:not(.run-active) .section-toolbar{margin-bottom:5px}
+  .app-shell.phone-mode:not(.run-active) .section-toolbar h2{font-size:15px}
+  .app-shell.phone-mode:not(.run-active) .history-toolbar-compact .muted-inline{font-size:9px}
+  .app-shell.phone-mode:not(.run-active) .recent-preview{margin-top:7px}
+  .app-shell.phone-mode:not(.run-active) .template-name-row,
+  .app-shell.phone-mode:not(.run-active) .quick-template-bar{margin-top:5px}
+  .app-shell.phone-mode:not(.run-active) .value-click-tip{display:none}
+}
 /* v1.3 simplified workflow, templates and history */
 .resume-banner{padding:7px 10px}.resume-banner span{font-size:10px}.recent-preview{margin-top:12px}.template-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.template-list{display:grid;gap:6px;margin-top:7px}.template-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center;border:1px solid #e0e8f1;background:#f8fbff;border-radius:10px;padding:7px}.template-item b,.template-item span{display:block}.template-item b{font-size:11px}.template-item span{font-size:9px;color:var(--muted);margin-top:2px}.template-item-actions{display:flex;gap:4px}.simple-values-layout{grid-template-columns:minmax(0,1fr) 250px}.simple-value-header{align-items:center}.selected-well-big{font-size:28px;font-weight:900;color:var(--primary);margin:3px 0 12px}.simple-value-tools>label{margin-top:10px}.simple-single-editor{background:#f5f9ff;border:1px solid #dce9f7;border-radius:12px;padding:10px}.volume-input-row{display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:7px;margin:6px 0}.volume-input-row input{font-size:22px;font-weight:850;text-align:center}.simple-details{border-top:1px solid #e8eef5;margin-top:12px;padding-top:10px}.simple-details summary{cursor:pointer;font-weight:800;color:#46617c;list-style:none;padding:4px 0}.simple-details summary::-webkit-details-marker{display:none}.simple-details summary::after{content:"＋";float:right}.simple-details[open] summary::after{content:"−"}.details-body{display:grid;gap:8px;padding-top:8px}.step-order-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px}.history-list{display:grid;gap:9px}.compact-history{grid-template-columns:repeat(2,minmax(0,1fr))}.history-item{border:1px solid #dfe8f2;border-radius:13px;background:#fbfdff;padding:11px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}.history-item.paused,.history-item.running{border-color:#b9d8ff;background:#f5faff}.history-item.completed{border-color:#cce7d8;background:#f8fffb}.history-name{font-size:14px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:10px;margin-top:4px}.history-status{font-weight:850;border-radius:99px;padding:2px 7px;background:#e8f2ff;color:#1565c0}.history-item.completed .history-status{background:#e6f8ee;color:#168454}.history-progress{height:5px;background:#e7eef6;border-radius:99px;overflow:hidden;margin-top:7px}.history-progress i{display:block;height:100%;background:var(--primary);border-radius:inherit}.history-item.completed .history-progress i{background:var(--green)}.history-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.history-empty{text-align:center;color:var(--muted);padding:28px;border:1px dashed #cedbe9;border-radius:12px;background:#f8fbff}.calibration-share-box{margin:14px 0;border:1px solid #dce6f1;background:#f8fbff;border-radius:13px;padding:12px}.calibration-share-box h3{margin:0 0 4px}.calibration-share-box p{font-size:10px;color:var(--muted);margin:0 0 8px}.well.selected-hole-edit{box-shadow:0 0 0 3px rgba(237,102,95,.3)}
 @media(max-width:1080px){.simple-values-layout{grid-template-columns:minmax(0,1fr) 220px}.simple-value-tools{display:block}.compact-history{grid-template-columns:1fr}.history-item{grid-template-columns:1fr}.history-actions{justify-content:flex-start}}
@@ -182,7 +208,6 @@
           <button class="plate-card selected" data-plate="96"><div class="mini-plate mini-96"></div><strong>96 孔板</strong><span>8 × 12</span><em>常用</em></button>
           <button class="plate-card" data-plate="384"><div class="mini-plate mini-384"></div><strong>384 孔板</strong><span>16 × 24</span><em>高通量</em></button>
         </div>
-        <div class="hint-card"><b>快速开始</b><p>可以新建，也可以直接调用最近做过的实验设计。</p></div>
         <div class="recent-preview card">
           <div class="section-toolbar"><div><h2>最近实验</h2><p>未完成可继续；做过的实验可直接再次使用。</p></div><button id="openHistoryBtn" class="ghost-btn small">查看全部</button></div>
           <div id="recentHistoryPreview" class="history-list compact-history"></div>
@@ -246,7 +271,7 @@
         <div class="values-layout simple-values-layout">
           <div class="card values-workspace">
             <div class="section-toolbar simple-value-header">
-              <div><span class="eyebrow">当前区域</span><h2 id="valuesTaskName">—</h2></div>
+              <div><h2 id="valuesTaskName">—</h2></div>
               <button id="addStepBtn" class="primary-btn small">＋ 添加一次加样</button>
             </div>
             <div class="template-name-row">
@@ -293,8 +318,8 @@
 
       <section id="panel-history" class="panel">
         <div class="card history-card">
-          <div class="section-toolbar">
-            <div><h2>实验记录</h2><p>自动保留做过的实验。未完成可继续，任何记录都可以“再次使用”整套设计。</p></div>
+          <div class="section-toolbar history-toolbar-compact">
+            <span class="muted-inline">未完成可继续，历史设计可再次使用</span>
             <button id="clearFinishedHistoryBtn" class="ghost-btn small">清理已完成</button>
           </div>
           <div id="historyList" class="history-list"></div>
@@ -313,7 +338,7 @@
             <div id="intervalSetting" class="inline-setting disabled-block"><label for="intervalInput">自动间隔</label><button id="intervalMinus" class="step-btn">−</button><input id="intervalInput" type="number" value="5" min="1" max="60" step="0.5" /><span>s</span><button id="intervalPlus" class="step-btn">＋</button></div>
           </div>
           <div class="card voice-card">
-            <div class="section-toolbar"><div><h2>语音导航</h2><p>点击“下一个”后播报下一枪；体积变化时重点提醒调枪。</p></div><button id="testVoiceBtn" class="ghost-btn small">🔊 测试语音</button></div>
+            <div class="section-toolbar compact-card-heading"><h2>语音导航</h2><button id="testVoiceBtn" class="ghost-btn small">🔊 测试</button></div>
             <div class="toggle-row"><div><b>启用语音</b><span>使用 iPad 系统语音合成</span></div><input id="voiceEnabled" type="checkbox" checked /></div>
             <label class="form-line">播报模式<select id="voiceMode"><option value="full">完整：试剂 + 孔位 + 体积</option><option value="standard">标准：孔位 + 体积</option><option value="volume" selected>只播体积：60微升</option><option value="compact">精简：体积相同只播孔位</option></select><small>“只播体积”模式下，不播孔位、试剂切换或调枪提示，只读当前体积。</small></label>
             <label class="form-line">发音人<div class="voice-picker-row"><select id="voiceSelect"><option value="">系统默认中文语音</option></select><button id="refreshVoicesBtn" class="ghost-btn small" type="button">刷新</button></div><small id="voiceHint">仅显示这台 iPad / Safari 当前可用的中文发音人。</small></label>
@@ -328,19 +353,16 @@
         <div class="display-settings-grid">
           <div class="card">
             <h2>显示设置</h2>
-            <p>孔板显示区可独立选择黑底或白底，不影响已经保存的孔位校准。</p>
             <label class="form-line">运行界面模式<select id="runDisplayModeSelect"><option value="auto" selected>自动识别（推荐）</option><option value="ipad">iPad 模式</option><option value="phone">手机模式 · iPhone 17 Pro Max</option></select><small>默认自动识别当前是手机还是 iPad；如识别不符合实际，可在这里手动覆盖。手机与 iPad 的孔位校准仍分别保存。</small></label>
             <label class="form-line">孔板背景<select id="plateBackgroundSelect"><option value="dark">黑色（高对比）</option><option value="light" selected>白色（明亮）</option></select></label>
             <div class="toggle-row"><div><b>显示坐标标记</b><span>96孔板显示 A–H 与 1–12；384孔板显示 A–P 与 1–24</span></div><input id="showCoordinateToggle" type="checkbox" checked /></div>
           </div>
-          <div class="card"><h2>孔位状态颜色</h2><p>运行界面使用这些状态色。</p><div id="colorRows" class="color-rows"></div></div>
+          <div class="card"><h2>孔位状态颜色</h2><div id="colorRows" class="color-rows"></div></div>
         </div>
       </section>
 
       <section id="panel-calibration" class="panel">
         <div class="card calibration-manager">
-          <h2>校准管理</h2>
-          <p>真正校准会在<strong>最终运行界面的同一个孔板区域</strong>中完成。首次校准后会保存到本机，此后无需反复校准。</p>
           <div id="calibrationCards" class="calibration-cards"></div>
           <div class="toggle-row"><div><b>开始时快速闪烁角点</b><span>已校准时只快速验证 A1 / 对角点位置，不重新校准</span></div><input id="quickVerifyToggle" type="checkbox" checked /></div>
           <div class="calibration-share-box">
@@ -544,7 +566,7 @@
 
   function setPanel(name){
     state.activePanel=name;$$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.panel===name));$$('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
-    const map={plate:['选择微孔板类型','选择本次使用的孔板'],selection:['区域与任务','选择标准曲线、样品区域并设置顺序'],values:['加样设置','选择一次加样，点孔输入体积'],history:['实验记录','继续上次实验，或再次使用以前的设计'],operation:['操作 / 语音','设置推进方式与语音调枪提示'],colors:['显示 / 颜色','切换黑白孔板背景、坐标标记和孔位状态颜色'],calibration:['校准管理','一次校准长期复用，也可以共享校准比例']};
+    const map={plate:['板型','选择孔板'],selection:['区域与任务','划分区域并设置顺序'],values:['加样设置','点孔输入体积'],history:['实验记录','继续或再次使用'],operation:['操作 / 语音','推进与语音设置'],colors:['显示 / 颜色','显示与状态颜色'],calibration:['校准管理','设备与孔板校准']};
     $('#panelTitle').textContent=map[name][0];$('#panelDesc').textContent=map[name][1];saveState();renderPanel(name);
   }
   function renderPanel(name){if(name==='selection')renderSelection();if(name==='values')renderValues();if(name==='history')renderHistoryViews();if(name==='plate')renderHistoryViews();if(name==='colors')renderColors();if(name==='calibration')renderCalibrationManager()}
