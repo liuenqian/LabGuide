@@ -1,4 +1,4 @@
-const CACHE = 'labguide-v1.4.4-20260919';
+const CACHE = 'labguide-v1.4.5-20260919';
 const ASSETS = ['./','./index.html','./manifest.webmanifest'];
 
 self.addEventListener('install', event => {
