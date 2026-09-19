@@ -462,8 +462,11 @@
       saved:true,savedAt:null,name:'默认96孔板校准',builtIn:true
     },
     '96-landscape-phone':{
-      tl:{x:8,y:7},tr:{x:88,y:7},bl:{x:8,y:93},br:{x:88,y:93},
-      saved:false,savedAt:null,name:'iPhone 17 Pro Max · 固定孔距模式',builtIn:true,
+      tl:{x:13.94660194174756,y:7},
+      tr:{x:93.94660194174756,y:7},
+      bl:{x:13.94660194174756,y:93},
+      br:{x:93.94660194174756,y:93},
+      saved:true,savedAt:null,name:'iPhone 17 Pro Max · 固定孔距模式',builtIn:true,
       device:'iPhone 17 Pro Max',displayPx:'2868×1320',ppi:460,fixedPhysicalPitch:true
     }
   };
@@ -545,11 +548,11 @@
   function renderHistoryViews(){const list=$('#historyList'),empty=$('#historyEmpty'),recent=$('#recentHistoryPreview');if(list){list.innerHTML='';experimentHistory.forEach(h=>list.append(historyItem(h)));empty?.classList.toggle('hidden',experimentHistory.length>0)}if(recent){recent.innerHTML='';experimentHistory.slice(0,4).forEach(h=>recent.append(historyItem(h,true)));if(!experimentHistory.length)recent.innerHTML='<div class="history-empty">暂无记录</div>'}}
   function calibrationCode(){
     const x=getCalibration();if(!x.saved){toast('请先完成并保存校准');return null}
-    const payload={v:2,plate:state.plate,orientation:orientationKey(),displayMode:state.runDisplayMode||'ipad',name:x.name||'',tl:x.tl,tr:x.tr,bl:x.bl,br:x.br};
+    const payload={v:3,plate:state.plate,orientation:orientationKey(),displayMode:resolvedRunDisplayMode(),name:x.name||'',tl:x.tl,tr:x.tr,bl:x.bl,br:x.br};
     return 'LG1-'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
   }
   function copyCalibrationCode(){const code=calibrationCode();if(!code)return;(navigator.clipboard?.writeText(code).then(()=>toast('校准码已复制')).catch(()=>prompt('复制下面的校准码',code)))}
-  function importCalibrationCode(){const code=prompt('粘贴校准码');if(!code)return;try{const raw=code.trim().replace(/^LG1-/,'');const p=JSON.parse(decodeURIComponent(escape(atob(raw))));if(!p.plate||!p.tl||!p.tr||!p.bl||!p.br)throw 0;const importedMode=p.displayMode||'ipad',key=`${p.plate}-${p.orientation||orientationKey()}-${importedMode}`;calibration[key]={tl:p.tl,tr:p.tr,bl:p.bl,br:p.br,saved:true,savedAt:Date.now(),name:p.name||'共享校准'};localStorage.setItem(CAL_KEY,JSON.stringify(calibration));if(p.plate===state.plate&&$('#calibrationProfileName'))$('#calibrationProfileName').value=calibration[key].name;renderCalibrationManager();toast('校准比例已导入，请快速验证四角')}catch(_){toast('校准码无效')}}
+  function importCalibrationCode(){const code=prompt('粘贴校准码');if(!code)return;try{const raw=code.trim().replace(/^LG1-/,'');const p=JSON.parse(decodeURIComponent(escape(atob(raw))));if(!p.plate||!p.tl||!p.tr||!p.bl||!p.br)throw 0;const importedMode=p.displayMode==='auto'?resolvedRunDisplayMode():(p.displayMode||'ipad'),key=`${p.plate}-${p.orientation||orientationKey()}-${importedMode}`;calibration[key]={tl:p.tl,tr:p.tr,bl:p.bl,br:p.br,saved:true,savedAt:Date.now(),name:p.name||'共享校准'};localStorage.setItem(CAL_KEY,JSON.stringify(calibration));if(p.plate===state.plate&&$('#calibrationProfileName'))$('#calibrationProfileName').value=calibration[key].name;renderCalibrationManager();toast('校准比例已导入，请快速验证四角')}catch(_){toast('校准码无效')}}
   function serializeState(){return {...state,selectionHistory:[],rectAnchor:null}}
   function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(serializeState()));localStorage.setItem(CAL_KEY,JSON.stringify(calibration));markSaved()}
   function loadState(){
