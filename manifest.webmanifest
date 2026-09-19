@@ -12,5 +12,5 @@
   "background_color": "#eef5ff",
   "theme_color": "#eef5ff",
   "orientation": "landscape",
-  "description": "LabGuide v1.2：区域与任务合并、多次加样任务、逐孔体积、黑白孔板背景、坐标标记、语音导航与侧键一次校准。"
+  "description": "LabGuide v1.3：简化加样设置，支持实验记录继续/再次使用、标准曲线模板、逐孔体积与共享校准比例。"
 }
