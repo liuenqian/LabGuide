@@ -296,7 +296,7 @@
           <div class="card">
             <h2>显示设置</h2>
             <p>孔板显示区可独立选择黑底或白底，不影响已经保存的孔位校准。</p>
-            <label class="form-line">运行界面模式<select id="runDisplayModeSelect"><option value="ipad" selected>iPad 模式</option><option value="phone">手机模式 · iPhone 17 Pro Max</option></select><small>手机模式按 iPhone 17 Pro Max 横屏优化（2868 × 1320，460 ppi）。最终页只保留左侧操作键 + 孔板；手机孔位使用独立校准。</small></label>
+            <label class="form-line">运行界面模式<select id="runDisplayModeSelect"><option value="auto" selected>自动识别（推荐）</option><option value="ipad">iPad 模式</option><option value="phone">手机模式 · iPhone 17 Pro Max</option></select><small>默认自动识别当前是手机还是 iPad；如识别不符合实际，可在这里手动覆盖。手机与 iPad 的孔位校准仍分别保存。</small></label>
             <label class="form-line">孔板背景<select id="plateBackgroundSelect"><option value="dark">黑色（高对比）</option><option value="light" selected>白色（明亮）</option></select></label>
             <div class="toggle-row"><div><b>显示坐标标记</b><span>96孔板显示 A–H 与 1–12；384孔板显示 A–P 与 1–24</span></div><input id="showCoordinateToggle" type="checkbox" checked /></div>
           </div>
@@ -379,7 +379,7 @@
     return task;
   }
 
-  const state={plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},runDisplayMode:'ipad',plateBackground:'light',showCoordinates:true,voice:{enabled:true,mode:'volume',voiceURI:'',emphasizeVolume:false,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'};
+  const state={plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},runDisplayMode:'auto',plateBackground:'light',showCoordinates:true,voice:{enabled:true,mode:'volume',voiceURI:'',emphasizeVolume:false,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'};
   const run={active:false,actions:[],index:0,startedAt:null,timer:null,countdownTimer:null,nextAt:null,paused:false,calibrationMode:false,log:[],historyId:null};
   let calibration={};
   let taskTemplates=[];
@@ -409,13 +409,23 @@
       device:'iPhone 17 Pro Max',displayPx:'2868×1320',ppi:460
     }
   };
-  function calKey(plate=state.plate,mode=state.runDisplayMode||'ipad'){return `${plate}-${orientationKey()}-${mode}`}
-  function defaultCalibration(plate=state.plate,orientation=orientationKey(),mode=state.runDisplayMode||'ipad'){
+  function detectedRunDisplayMode(){
+    const ua=navigator.userAgent||'',platform=navigator.platform||'',touch=navigator.maxTouchPoints||0;
+    const isIPad=/iPad/i.test(ua)||(platform==='MacIntel'&&touch>1);
+    const isIPhone=/iPhone|iPod/i.test(ua);
+    if(isIPad)return 'ipad';
+    if(isIPhone)return 'phone';
+    const shortSide=Math.min(screen.width||innerWidth,screen.height||innerHeight);
+    return shortSide<=500?'phone':'ipad';
+  }
+  function resolvedRunDisplayMode(){return state.runDisplayMode==='phone'||state.runDisplayMode==='ipad'?state.runDisplayMode:detectedRunDisplayMode()}
+  function calKey(plate=state.plate,mode=resolvedRunDisplayMode()){return `${plate}-${orientationKey()}-${mode}`}
+  function defaultCalibration(plate=state.plate,orientation=orientationKey(),mode=resolvedRunDisplayMode()){
     const preset=BUILTIN_CALIBRATIONS[`${plate}-${orientation}-${mode}`];
     if(preset)return clone(preset);
     return {tl:{x:10,y:12},tr:{x:90,y:12},bl:{x:10,y:88},br:{x:90,y:88},saved:false,savedAt:null,name:''}
   }
-  function getCalibration(plate=state.plate){const k=calKey(plate);if(!calibration[k])calibration[k]=defaultCalibration(plate,orientationKey(),state.runDisplayMode||'ipad');return calibration[k]}
+  function getCalibration(plate=state.plate){const k=calKey(plate);if(!calibration[k])calibration[k]=defaultCalibration(plate,orientationKey(),resolvedRunDisplayMode());return calibration[k]}
 
   function loadReusableData(){
     try{const t=JSON.parse(localStorage.getItem(TEMPLATE_KEY)||'[]');taskTemplates=Array.isArray(t)?t:[]}catch(_){taskTemplates=[]}
@@ -508,11 +518,13 @@
   function renderPanel(name){if(name==='selection')renderSelection();if(name==='values')renderValues();if(name==='history')renderHistoryViews();if(name==='plate')renderHistoryViews();if(name==='colors')renderColors();if(name==='calibration')renderCalibrationManager()}
 
   function applyRunDisplayMode(){
-    const app=$('#app'),mode=state.runDisplayMode||'ipad';
+    const app=$('#app'),preference=state.runDisplayMode||'auto',mode=resolvedRunDisplayMode();
     app.classList.toggle('phone-mode',mode==='phone');
-    app.classList.toggle('ipad-mode',mode!=='phone');
+    app.classList.toggle('ipad-mode',mode==='ipad');
     if(mode==='phone'&&run.active)app.classList.add('plate-focus');
-    if($('#runDisplayModeSelect'))$('#runDisplayModeSelect').value=mode;
+    if(mode==='ipad'&&preference==='auto')app.classList.remove('plate-focus');
+    if($('#runDisplayModeSelect'))$('#runDisplayModeSelect').value=preference;
+    app.dataset.resolvedRunMode=mode;
   }
   function togglePlateFocus(){
     if(!run.active)return;
@@ -634,7 +646,7 @@
 
   function renderColors(){const root=$('#colorRows');if(!root)return;const defs=[['unselected','未参与','不属于任何任务区'],['pending','待加样','当前步骤尚未完成'],['current','当前孔','当前需要操作'],['completed','已完成','当前步骤已完成'],['special','特殊','异常/提醒']];const palette=['#27384c','#1677f5','#20c777','#ffffff','#ffd84d','#ff8a65','#ff4d4f','#a864ff','#222b38'];root.innerHTML='';defs.forEach(([k,l,d])=>{const row=document.createElement('div');row.className='color-row';row.innerHTML=`<div class="color-label"><b>${l}</b><span>${d}</span></div><div class="swatches"></div><input class="color-input" type="color" value="${state.colors[k]}">`;const sw=$('.swatches',row);palette.forEach(c=>{const b=document.createElement('button');b.className='swatch'+(c.toLowerCase()===state.colors[k].toLowerCase()?' active':'');b.style.background=c;b.onclick=()=>{state.colors[k]=c;saveState();renderColors()};sw.append(b)});$('.color-input',row).oninput=e=>{state.colors[k]=e.target.value;saveState()};root.append(row)})}
 
-  function renderCalibrationManager(){const root=$('#calibrationCards');if(!root)return;root.innerHTML='';[96,384].forEach(p=>{const c=getCalibration(p),div=document.createElement('div');div.className='calibration-status-card'+(c.saved?' ok':'');div.innerHTML=`<strong>${p} 孔板 · ${orientationKey()==='landscape'?'横屏':'竖屏'} · ${state.runDisplayMode==='phone'?'手机模式 / iPhone 17 Pro Max':'iPad模式'}</strong><span>${c.saved?'✓ 已校准'+(c.name?' · '+escapeHtml(c.name):'')+(c.builtIn?' · 默认方案':''):'尚未校准 · 已载入设备初始布局，首次运行微调'}</span>`;root.append(div)});$('#quickVerifyToggle').checked=state.quickVerify;if($('#calibrationProfileName'))$('#calibrationProfileName').value=getCalibration().name||''}
+  function renderCalibrationManager(){const root=$('#calibrationCards');if(!root)return;root.innerHTML='';[96,384].forEach(p=>{const c=getCalibration(p),div=document.createElement('div');div.className='calibration-status-card'+(c.saved?' ok':'');div.innerHTML=`<strong>${p} 孔板 · ${orientationKey()==='landscape'?'横屏':'竖屏'} · ${resolvedRunDisplayMode()==='phone'?'手机模式 / iPhone 17 Pro Max':'iPad模式'}</strong><span>${c.saved?'✓ 已校准'+(c.name?' · '+escapeHtml(c.name):'')+(c.builtIn?' · 默认方案':''):'尚未校准 · 已载入设备初始布局，首次运行微调'}</span>`;root.append(div)});$('#quickVerifyToggle').checked=state.quickVerify;if($('#calibrationProfileName'))$('#calibrationProfileName').value=getCalibration().name||''}
   function interpPoint(cal,u,v){return {x:(1-u)*(1-v)*cal.tl.x+u*(1-v)*cal.tr.x+(1-u)*v*cal.bl.x+u*v*cal.br.x,y:(1-u)*(1-v)*cal.tl.y+u*(1-v)*cal.tr.y+(1-u)*v*cal.bl.y+u*v*cal.br.y}}
   function stageWellSize(stage,plate){const d=plateDims(plate),c=getCalibration(plate),pxW=stage.clientWidth*Math.abs(c.tr.x-c.tl.x)/100/Math.max(d.cols-1,1),pxH=stage.clientHeight*Math.abs(c.bl.y-c.tl.y)/100/Math.max(d.rows-1,1);return Math.max(5,Math.min(pxW,pxH)*(plate===384?.55:.67))}
 
@@ -733,7 +745,7 @@
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`LabGuide_${new Date(run.startedAt).toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  function resetAll(){if(!confirm('确定重置任务、数值和设置？已保存的校准将保留。'))return;const keepCal=calibration;localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(RUN_KEY);Object.assign(state,{plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},runDisplayMode:'ipad',plateBackground:'light',showCoordinates:true,voice:{enabled:true,mode:'volume',voiceURI:'',emphasizeVolume:false,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'});calibration=keepCal;ensureDefaults();saveState();syncUI();renderHistoryViews();toast('已重置当前设置，模板、记录和校准均保留')}
+  function resetAll(){if(!confirm('确定重置任务、数值和设置？已保存的校准将保留。'))return;const keepCal=calibration;localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(RUN_KEY);Object.assign(state,{plate:96,tasks:[],activeTaskId:null,activeStepId:null,selectionMode:'rect',rectAnchor:null,selectionHistory:[],opMode:'manual',interval:5,colors:{...defaultColors},runDisplayMode:'auto',plateBackground:'light',showCoordinates:true,voice:{enabled:true,mode:'volume',voiceURI:'',emphasizeVolume:false,reagentSwitch:true,rate:1},quickVerify:true,forceRecalibrate:{},activePanel:'plate'});calibration=keepCal;ensureDefaults();saveState();syncUI();renderHistoryViews();toast('已重置当前设置，模板、记录和校准均保留')}
 
   function bindUI(){
     $$('.nav-item').forEach(b=>b.onclick=()=>setPanel(b.dataset.panel));$$('.plate-card').forEach(c=>c.onclick=()=>{state.plate=Number(c.dataset.plate);sanitizeTasks();state.rectAnchor=null;saveState();syncUI()});
@@ -745,14 +757,19 @@
     $('#addStepBtn').onclick=()=>{const s=makeStep(`加样任务 ${activeTask().steps.length+1}`);activeTask().steps.push(s);state.activeStepId=s.id;saveState();renderValues()};$('#applyBcaTemplateBtn').onclick=applyBuiltInBca;$('#saveCurrentTemplateFromValuesBtn').onclick=saveTemplateFromValues;$('#openMyTemplatesFromValuesBtn').onclick=()=>{$('#valueTemplateList').classList.toggle('hidden');renderValueTemplateList()};$('#stepMoveUpBtn').onclick=()=>moveStep(-1);$('#stepMoveDownBtn').onclick=()=>moveStep(1);$('#stepNameInput').onchange=e=>{activeStep().name=e.target.value||'未命名步骤';saveState();renderValues()};$('#stepUnitSelect').onchange=e=>{activeStep().unit=e.target.value;saveState();renderValues()};$('#stepPipetteSelect').onchange=e=>{activeStep().pipette=e.target.value;saveState();renderValues()};$('#tipPolicySelect').onchange=e=>{activeStep().tipPolicy=e.target.value;saveState();renderValues()};$('#fillValueBtn').onclick=fillAll;$('#applySequenceBtn').onclick=applySequence;$('#complementBtn').onclick=complement;const saveSingleValue=()=>{if(!selectedValueWell){toast('先点一个孔');return}const v=Number($('#singleValueInput').value);if(!Number.isFinite(v)){toast('请输入数值');return}activeStep().values[selectedValueWell]=v;saveState();renderValues();toast(`${selectedValueWell} 已保存`)};$('#singleValueSaveBtn').onclick=saveSingleValue;$('#singleValueInput').onkeydown=e=>{if(e.key==='Enter')saveSingleValue()};$('#deleteStepBtn').onclick=()=>{const t=activeTask();if(t.steps.length<=1){toast('至少保留一个步骤');return}const s=activeStep();t.steps=t.steps.filter(x=>x.id!==s.id);state.activeStepId=t.steps[0].id;saveState();renderValues()};
     $$('input[name="opMode"]').forEach(i=>i.onchange=()=>{state.opMode=i.value;saveState();syncUI()});$('#intervalMinus').onclick=()=>{state.interval=Math.max(1,+(state.interval-.5).toFixed(1));saveState();syncUI()};$('#intervalPlus').onclick=()=>{state.interval=Math.min(60,+(state.interval+.5).toFixed(1));saveState();syncUI()};$('#intervalInput').onchange=e=>{state.interval=Math.max(1,Math.min(60,Number(e.target.value)||5));saveState();syncUI()};
     $('#voiceEnabled').onchange=e=>{state.voice.enabled=e.target.checked;saveState()};$('#voiceMode').onchange=e=>{state.voice.mode=e.target.value;saveState()};$('#voiceSelect').onchange=e=>{state.voice.voiceURI=e.target.value;saveState();speak(state.voice.mode==='volume'?'六十微升':'A三，六十微升')};$('#refreshVoicesBtn').onclick=()=>{loadVoices();toast(availableVoices.length?`已刷新 ${availableVoices.length} 个可用语音`:'暂未读取到系统语音')};$('#emphasizeVolume').onchange=e=>{state.voice.emphasizeVolume=e.target.checked;saveState()};$('#reagentSwitchVoice').onchange=e=>{state.voice.reagentSwitch=e.target.checked;saveState()};$('#voiceRate').oninput=e=>{state.voice.rate=Number(e.target.value);saveState()};$('#testVoiceBtn').onclick=()=>speak(state.voice.mode==='volume'?'六十微升':'LabGuide 语音提示已开启。A三，六十微升。');
-    $('#runDisplayModeSelect').onchange=e=>{state.runDisplayMode=e.target.value;saveState();applyRunDisplayMode();renderCalibrationManager();if(run.active){renderRun();toast(state.runDisplayMode==='phone'?'已切换到手机模式':'已切换到 iPad 模式')}};$('#plateBackgroundSelect').onchange=e=>{state.plateBackground=e.target.value;saveState();if(run.active)renderRunStage()};$('#openHistoryBtn').onclick=()=>setPanel('history');$('#clearFinishedHistoryBtn').onclick=()=>{if(!confirm('清理所有已完成的实验记录？未完成记录会保留。'))return;experimentHistory=experimentHistory.filter(h=>h.status!=='completed');saveHistory();renderHistoryViews()};$('#showCoordinateToggle').onchange=e=>{state.showCoordinates=e.target.checked;saveState();if(run.active)renderRunStage()};$('#quickVerifyToggle').onchange=e=>{state.quickVerify=e.target.checked;saveState()};$('#calibrationProfileName').onchange=e=>{const x=getCalibration();x.name=e.target.value.trim();saveState();renderCalibrationManager()};$('#copyCalibrationCodeBtn').onclick=copyCalibrationCode;$('#importCalibrationCodeBtn').onclick=importCalibrationCode;$('#forceRecalibrateBtn').onclick=()=>{state.forceRecalibrate[calKey()]=true;const c=getCalibration();c.saved=false;saveState();renderCalibrationManager();toast('已标记：下次开始时重新校准')};$('#saveRunCalibrationBtn').onclick=saveRunCalibration;$('#calUpBtn').onclick=()=>nudgeCalibration(0,-1);$('#calDownBtn').onclick=()=>nudgeCalibration(0,1);$('#calLeftBtn').onclick=()=>nudgeCalibration(-1,0);$('#calRightBtn').onclick=()=>nudgeCalibration(1,0);$('#calPrevBtn').onclick=()=>{calibrationPointIndex=Math.max(0,calibrationPointIndex-1);updateCalibrationControls();addCalibrationHandles()};$('#calNextBtn').onclick=()=>{calibrationPointIndex=Math.min(3,calibrationPointIndex+1);updateCalibrationControls();addCalibrationHandles()};$('.cal-step').forEach(b=>b.onclick=()=>{calibrationStepPx=Number(b.dataset.calStep)||1;updateCalibrationControls()});
+    $('#runDisplayModeSelect').onchange=e=>{state.runDisplayMode=e.target.value;saveState();applyRunDisplayMode();renderCalibrationManager();if(run.active)renderRun();const resolved=resolvedRunDisplayMode();toast(state.runDisplayMode==='auto'?('自动识别：'+(resolved==='phone'?'手机模式':'iPad 模式')):(resolved==='phone'?'已切换到手机模式':'已切换到 iPad 模式'))};$('#plateBackgroundSelect').onchange=e=>{state.plateBackground=e.target.value;saveState();if(run.active)renderRunStage()};$('#openHistoryBtn').onclick=()=>setPanel('history');$('#clearFinishedHistoryBtn').onclick=()=>{if(!confirm('清理所有已完成的实验记录？未完成记录会保留。'))return;experimentHistory=experimentHistory.filter(h=>h.status!=='completed');saveHistory();renderHistoryViews()};$('#showCoordinateToggle').onchange=e=>{state.showCoordinates=e.target.checked;saveState();if(run.active)renderRunStage()};$('#quickVerifyToggle').onchange=e=>{state.quickVerify=e.target.checked;saveState()};$('#calibrationProfileName').onchange=e=>{const x=getCalibration();x.name=e.target.value.trim();saveState();renderCalibrationManager()};$('#copyCalibrationCodeBtn').onclick=copyCalibrationCode;$('#importCalibrationCodeBtn').onclick=importCalibrationCode;$('#forceRecalibrateBtn').onclick=()=>{state.forceRecalibrate[calKey()]=true;const c=getCalibration();c.saved=false;saveState();renderCalibrationManager();toast('已标记：下次开始时重新校准')};$('#saveRunCalibrationBtn').onclick=saveRunCalibration;$('#calUpBtn').onclick=()=>nudgeCalibration(0,-1);$('#calDownBtn').onclick=()=>nudgeCalibration(0,1);$('#calLeftBtn').onclick=()=>nudgeCalibration(-1,0);$('#calRightBtn').onclick=()=>nudgeCalibration(1,0);$('#calPrevBtn').onclick=()=>{calibrationPointIndex=Math.max(0,calibrationPointIndex-1);updateCalibrationControls();addCalibrationHandles()};$('#calNextBtn').onclick=()=>{calibrationPointIndex=Math.min(3,calibrationPointIndex+1);updateCalibrationControls();addCalibrationHandles()};$('.cal-step').forEach(b=>b.onclick=()=>{calibrationStepPx=Number(b.dataset.calStep)||1;updateCalibrationControls()});
     $('#resumeBtn').onclick=()=>{const s=getRunSnapshot();if(s)startRun(s)};$('#discardResumeBtn').onclick=()=>{$('#resumeBanner').classList.add('hidden');toast('可以稍后从“实验记录”继续')};$('#exportLogBtn').onclick=exportLogCSV;$('#newRunBtn').onclick=()=>{run.active=false;$('#app').classList.remove('plate-focus');$('#completePanel').classList.add('hidden');$('#setupSidebar').classList.remove('hidden');$('.topbar').classList.remove('hidden');setPanel('selection')};$('#finishBtn').onclick=()=>{run.active=false;$('#app').classList.remove('plate-focus');$('#completePanel').classList.add('hidden');$('#setupSidebar').classList.remove('hidden');$('.topbar').classList.remove('hidden');setPanel('plate');toast('实验已完成')};
     $('#installBtn').onclick=()=>$('#installModal').classList.remove('hidden');$('#closeInstallModal').onclick=()=>$('#installModal').classList.add('hidden');window.addEventListener('resize',()=>{if(run.active){renderRun();if(run.calibrationMode){addCalibrationHandles();updateCalibrationControls()}}});
   }
 
   function escapeHtml(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 
-  loadState();bindUI();syncUI();renderHistoryViews();loadVoices();
+  loadState();
+  if(!localStorage.getItem('labguide-v1.4-auto-mode-migrated')){
+    if(state.runDisplayMode==='ipad')state.runDisplayMode='auto';
+    localStorage.setItem('labguide-v1.4-auto-mode-migrated','1');saveState();
+  }
+  bindUI();syncUI();renderHistoryViews();loadVoices();
   if('speechSynthesis'in window){window.speechSynthesis.onvoiceschanged=loadVoices;setTimeout(loadVoices,300);setTimeout(loadVoices,1200)}
   if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
